@@ -18,7 +18,7 @@
 		"theme": "dark"
 	},
 	"engines": {
-		"vscode": "^1.43.0"
+		"vscode": "^1.92.0"
 	},
 	"categories": [
 		"Programming Languages",
@@ -107,10 +107,9 @@
 						"type": "string",
 						"scope": "resource",
 						"default": "",
-						"format": "uri",
 						"description": "Specifies the directory where the 'WORK' library is located (set to the workspace top directory if left blank)"
 					},
-					"ghdl-interface.library.LibraryDirectory": {
+					"ghdl-interface.library.LibraryDirectories": {
 						"type": "array",
 						"items": {
 							"type": "string"
@@ -120,7 +119,7 @@
 						"format": "uri",
 						"description": "Specifies the directory/path where GHDL searchs for '.cf' library files (not used if left blank)"
 					},
-					"ghdl-interface.vhdl.VHDLStandard": {
+					"ghdl-interface.standard.VHDL": {
 						"type": "string",
 						"scope": "resource",
 						"default": "93c",
@@ -134,22 +133,16 @@
 						],
 						"description": "Specifies the VHDL standard to use"
 					},
-					"ghdl-interface.library.IEEEVersion": {
+					"ghdl-interface.standard.IEEE": {
 						"type": "string",
 						"scope": "resource",
 						"default": "standard",
 						"enum": [
 							"none",
 							"standard",
-							"mentor"
+							"synopsis"
 						],
 						"description": "Specifies VHDL standard to use"
-					},
-					"ghdl-interface.library.synopsys": {
-						"type": "boolean",
-						"scope": "resource",
-						"default": false,
-						"description": "Allows the use of synopsys non standard packages"
 					},
 					"ghdl-interface.general.verbose": {
 						"type": "boolean",

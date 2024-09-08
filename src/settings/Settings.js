@@ -1,6 +1,6 @@
 // MIT License
 
-const { settings } = require('cluster');
+//const { settings } = require('cluster');
 
 // Copyright (c) 2020 Johannes Bonk
 
@@ -22,12 +22,13 @@ const { settings } = require('cluster');
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-module.exports = class Settings {
-    path = require('fs');
+ 
 
-    TaskEnum = Object.freeze({"analyze":1, "elaborate":2, "run":3})
-    extensionId = "ghdl-interface"
+const fs = require('fs');
 
+const TaskEnum = Object.freeze({"analyze":1, "elaborate":2, "run":3});
+
+class Settings {
     constructor(vscode) {
         this.vscode = vscode; 
     }
@@ -35,13 +36,12 @@ module.exports = class Settings {
     getSettingsString(task) {
         const workspaceConfig = this.vscode.workspace.getConfiguration(this.getExtensionId())
         let settingsString = ""
-        if(task = this.TaskEnum.analyze) {
+        if(task == TaskEnum.analyze) {
             settingsString =    this.getWorkDirectoryName(workspaceConfig) + " " + 
                                 this.getWorkLibraryPath(workspaceConfig) + " " + 
                                 this.getLibraryDirectory(workspaceConfig) + " " +
                                 this.getVhdlStandard(workspaceConfig) + " " + 
                                 this.getIeeeVersion(workspaceConfig) + " " +
-                                this.getSynopsys(workspaceConfig) + " " +
                                 this.getVerbose(workspaceConfig) + " " +
                                 this.getRelaxedRules(workspaceConfig) + " " +
                                 this.getVitalChecks(workspaceConfig) + " " +
@@ -49,13 +49,12 @@ module.exports = class Settings {
                                 this.getExplicit(workspaceConfig) + " " +
                                 this.getSynBinding(workspaceConfig) + " " +
                                 this.getMbComments(workspaceConfig)
-        } else if(task = this.TaskEnum.elaborate) {
+        } else if(task == TaskEnum.elaborate) {
             settingsString =    this.getWorkDirectoryName(workspaceConfig) + " " + 
                                 this.getWorkLibraryPath(workspaceConfig) + " " + 
                                 this.getLibraryDirectory(workspaceConfig) + " " +
                                 this.getVhdlStandard(workspaceConfig) + " " + 
                                 this.getIeeeVersion(workspaceConfig) + " " +
-                                this.getSynopsys(workspaceConfig) + " " +
                                 this.getVerbose(workspaceConfig) + " " +
                                 this.getRelaxedRules(workspaceConfig) + " " +
                                 this.getVitalChecks(workspaceConfig) + " " +
@@ -63,13 +62,12 @@ module.exports = class Settings {
                                 this.getExplicit(workspaceConfig) + " " +
                                 this.getSynBinding(workspaceConfig) + " " +
                                 this.getMbComments(workspaceConfig)
-        } else if(task = this.TaskEnum.run) {
+        } else if(task == TaskEnum.run) {
             settingsString =    this.getWorkDirectoryName(workspaceConfig) + " " + 
                                 this.getWorkLibraryPath(workspaceConfig) + " " + 
                                 this.getLibraryDirectory(workspaceConfig) + " " +
                                 this.getVhdlStandard(workspaceConfig) + " " + 
                                 this.getIeeeVersion(workspaceConfig) + " " +
-                                this.getSynopsys(workspaceConfig) + " " +
                                 this.getVerbose(workspaceConfig) + " " +
                                 this.getTimeResolution(workspaceConfig) + " " +
                                 this.getRelaxedRules(workspaceConfig) + " " +
@@ -85,7 +83,9 @@ module.exports = class Settings {
     }
 
     getExtensionId() {
-        return this.extensionId; 
+        const extensionId = "ghdl-interface";
+
+        return extensionId; 
     }
 
     getWorkDirectoryName(workspaceConfig) {
@@ -101,7 +101,7 @@ module.exports = class Settings {
         const libPath = workspaceConfig.get("library.WorkLibraryPath")
         if((libPath == "") || (libPath == null)) {
             return ""
-        } else if(this.path.existsSync(libPath)) {
+        } else if(fs.existsSync(libPath)) {
             return "--workdir=" + libPath 
         } else {
             this.vscode.window.showInformationMessage("Specified path of library 'WORK' not found, ignoring argument. Check value in extension settings")
@@ -110,36 +110,39 @@ module.exports = class Settings {
     }
 
     getLibraryDirectory(workspaceConfig) {
-        let cmdOption = ""
-        const libPathArr = workspaceConfig.get("library.LibraryDirectory")
-        libPathArr.forEach(libPath => {
-            if(this.path.existsSync(libPath)) {
-                cmdOption = cmdOption + " " + "-P" + '"' + libPath + '"'
-            } else {
-                this.vscode.window.showInformationMessage(`Specified path of external library '${libPath}' not found, ignoring argument. Check value in extension settings`)
-            }
-        });
-        return cmdOption
+        let cmdOption = "";
+        const libPathArr = workspaceConfig.get("library.LibraryDirectories")
+        if (libPathArr != '') {
+            libPathArr.forEach(libPath => {
+                if(fs.existsSync(libPath)) {
+                    cmdOption = cmdOption + " " + "-P" + '"' + libPath + '"'
+                } else {
+                    this.vscode.window.showInformationMessage(`Specified path of external library '${libPath}' not found, ignoring argument. Check value in extension settings`)
+                }
+            });
+        }
+        return cmdOption;
     }
 
     getVhdlStandard(workspaceConfig) {
-        const vhdlStd = workspaceConfig.get("vhdl.VHDLStandard")
+        const vhdlStd = workspaceConfig.get("standard.VHDL")
         const cmdOption = "--std=" + vhdlStd
         return cmdOption
     }
 
     getIeeeVersion(workspaceConfig) {
-        const ieeVer = workspaceConfig.get("library.IEEEVersion")
-        const cmdOption = "--ieee=" + ieeVer
-        return cmdOption
-    }
-
-    getSynopsys(workspaceConfig) {
-        if(workspaceConfig.get("library.synopsys")) {
-            return "-fsynopsys"
-        } else {
-            return ""
+        const ieeVer = workspaceConfig.get("standard.IEEE")
+        let cmdOption = "";
+        switch(ieeVer) {
+            case "standard" :
+                cmdOption = "--ieee=" + ieeVer;
+                break;
+            case "none" :
+                break;
+            default:
+                cmdOption = "-fsynopsys";
         }
+        return cmdOption
     }
 
     getVerbose(workspaceConfig) {
@@ -204,3 +207,5 @@ module.exports = class Settings {
         }
     }
 }
+
+module.exports = { Settings, TaskEnum };

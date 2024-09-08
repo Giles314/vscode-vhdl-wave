@@ -23,6 +23,7 @@
 const vscode = require('vscode');
 const path = require('path'); 
 const { exec } = require('child_process');
+
 const lineDecorationType = vscode.window.createTextEditorDecorationType({
 	overviewRulerColor: 'red',
 	overviewRulerLane: vscode.OverviewRulerLane.Right,
@@ -57,10 +58,55 @@ const smallDecorationType = vscode.window.createTextEditorDecorationType({
 	   'ghw files': ['ghw']
    }
 };
+
 const LinkedList = require('./util/linkedlist/LinkedList'); 
 const ErrorData = require('./util/linkedlist/ErrorData'); 
-const Settings = require('./settings/Settings')
+const { Settings, TaskEnum } = require('./settings/Settings');
   
+
+/*Function: getSelectedFilePath
+**usage: when called from editor, file is given just return it,
+**when call from explorer, nothing is passed, get file selected in explorer
+**Parameter : the parameter given by vscode (nothing or the file)
+**Return value(s): the selected file path
+*/
+/**
+ * @param {any} givenUri
+ */
+function getSelectedFilePath(givenUri) {
+	let selectedFileUri;
+	if (givenUri == undefined) {
+		selectedFileUri = vscode.window.activeTextEditor.document.uri;
+	} else {
+		selectedFileUri = givenUri;
+	}
+	return selectedFileUri.fsPath;
+}
+
+/*
+**Function: getWorkspaceDirPath
+**usage: Provides the directory path of the project environment.
+**Usually this corresponds to the first working folder.
+**When user has not defined any, use the directory of compiled file
+**Parameter : the compile file path
+**return value(s): the path of the workspace directory
+*/
+/**
+ * @param {string} filePath
+ */
+function getWorkspaceDirPath(filePath) {
+	let dirPath;
+	const Folders = vscode.workspace.workspaceFolders;
+	if (Folders == undefined) {
+		dirPath = path.dirname(filePath); // When no workspace folder is defined use the file folder
+	} else {
+		dirPath = Folders[0].uri.fsPath;  // Get path of workspace root directory where the ghdl command must be run by default
+	}
+	return dirPath;
+}
+
+
+
 // this method is called when vs code is activated
 /**
  * @param {vscode.ExtensionContext} context
@@ -68,74 +114,48 @@ const Settings = require('./settings/Settings')
 function activate(context) {
 	console.log('ghdl-interface now active!'); // log extension start
 
-	let disposableEditorAnalyze = vscode.commands.registerCommand('extension.editor_ghdl-analyze_file', async function () {
-		const filePathEditor = vscode.window.activeTextEditor.document.uri.fsPath; // get file path of the currently opened file
+	//-- Asynchronous functions to process commands
+	const analyzeAsyncCmd = async (/** @type {any} */ selectedFile) => {
 		await vscode.window.activeTextEditor.document.save(); //save open file before analyzing it
-		removeDecorations(); // remove old decorations before adding new ones
-		analyzeFile(filePathEditor); 
-	});
-	let disposableExplorerAnalyze = vscode.commands.registerCommand('extension.explorer_ghdl-analyze_file', async (element) => {
-		const filePathExplorer = element.fsPath;
-		await vscode.window.activeTextEditor.document.save(); //save open file before analyzing
-		removeDecorations(); // remove old decorations before adding new ones
-		analyzeFile(filePathExplorer);  
-	});
+		analyzeFile(getSelectedFilePath(selectedFile)); 
+	}
+	const elabAsyncCmd   = async (/** @type {any} */ selectedFile) => { elaborateFiles(getSelectedFilePath(selectedFile)); }
+	const runAsyncCmd    = async (/** @type {any} */ selectedFile) => { runUnit(getSelectedFilePath(selectedFile)); }
+	const cleanAsynCmd   = async (/** @type {any} */ selectedFile) => { cleanGeneratedFiles(getSelectedFilePath(selectedFile)); }
+	const removeAsynCmd  = async (/** @type {any} */ selectedFile) => { removeGeneratedFiles(); /*unused*/ selectedFile; }
+	const waveAsynCmd    = async (/** @type {{ fsPath: string; }} */ selectedFile) => { invokeGtkwave(selectedFile.fsPath); }
+	
+	let disposableEditorAnalyze = vscode.commands.registerCommand('extension.editor_ghdl-analyze_file', analyzeAsyncCmd);
+	let disposableExplorerAnalyze = vscode.commands.registerCommand('extension.explorer_ghdl-analyze_file', analyzeAsyncCmd);
 
 	context.subscriptions.push(disposableEditorAnalyze);
 	context.subscriptions.push(disposableExplorerAnalyze); 
 
-	let disposableEditorElaborate = vscode.commands.registerCommand('extension.editor_ghdl-elaborate_file', async (element) => {
-		const filePathEditor = vscode.window.activeTextEditor.document.uri.fsPath; // get file path of the currently opened file
-		elaborateFiles(filePathEditor); 
-	});
-	let disposableExplorerElaborate = vscode.commands.registerCommand('extension.explorer_ghdl-elaborate_file', async (element) => {
-		const filePathExplorer = element.fsPath;
-		elaborateFiles(filePathExplorer); 
-	});
+	let disposableEditorElaborate = vscode.commands.registerCommand('extension.editor_ghdl-elaborate_file', elabAsyncCmd);
+	let disposableExplorerElaborate = vscode.commands.registerCommand('extension.explorer_ghdl-elaborate_file', elabAsyncCmd);
 
 	context.subscriptions.push(disposableEditorElaborate);
 	context.subscriptions.push(disposableExplorerElaborate); 
 
-	let disposableEditorRunUnit = vscode.commands.registerCommand('extension.editor_ghdl-run_unit', async (element) => {
-		const filePathEditor = vscode.window.activeTextEditor.document.uri.fsPath; // get file path of the currently opened file
-		runUnit(filePathEditor); 
-	});
-	let disposableExplorerRunUnit = vscode.commands.registerCommand('extension.explorer_ghdl-run_unit', async (element) => {
-		const filePathExplorer = element.fsPath;
-		runUnit(filePathExplorer); 
-	});
+	let disposableEditorRunUnit = vscode.commands.registerCommand('extension.editor_ghdl-run_unit', runAsyncCmd);
+	let disposableExplorerRunUnit = vscode.commands.registerCommand('extension.explorer_ghdl-run_unit', runAsyncCmd);
 
 	context.subscriptions.push(disposableEditorRunUnit);
 	context.subscriptions.push(disposableExplorerRunUnit); 
 	
-	let disposableEditorClean = vscode.commands.registerCommand('extension.editor_ghdl-clean', async (element) => {
-		cleanGeneratedFiles(); 
-	});
-	let disposableExplorerClean = vscode.commands.registerCommand('extension.explorer_ghdl-clean', async (element) => {
-		await vscode.window.activeTextEditor.document.save(); //save open file before analyzing
-		removeDecorations(); // remove old decorations before adding new ones
-		cleanGeneratedFiles(); 
-	});
+	let disposableEditorClean = vscode.commands.registerCommand('extension.editor_ghdl-clean', cleanAsynCmd);
+	let disposableExplorerClean = vscode.commands.registerCommand('extension.explorer_ghdl-clean', cleanAsynCmd);
 
 	context.subscriptions.push(disposableEditorClean); 
 	context.subscriptions.push(disposableExplorerClean);
 
-	let disposableEditorRemove = vscode.commands.registerCommand('extension.editor_ghdl-remove', async (element) => {
-		removeGeneratedFiles(); 
-	});
-	let disposableExplorerRemove = vscode.commands.registerCommand('extension.explorer_ghdl-remove', async (element) => {
-		await vscode.window.activeTextEditor.document.save(); //save open file before analyzing
-		removeDecorations(); // remove old decorations before adding new ones
-		removeGeneratedFiles(); 
-	});
+	let disposableEditorRemove = vscode.commands.registerCommand('extension.editor_ghdl-remove', removeAsynCmd);
+	let disposableExplorerRemove = vscode.commands.registerCommand('extension.explorer_ghdl-remove', removeAsynCmd);
 
 	context.subscriptions.push(disposableEditorRemove); 
 	context.subscriptions.push(disposableExplorerRemove);
 
-	let disposableExplorerGtkwave = vscode.commands.registerCommand('extension.explorer_gtkwave', async (element) => {
-		const filePathExplorer = element.fsPath;
-		invokeGtkwave(filePathExplorer); 
-	});
+	let disposableExplorerGtkwave = vscode.commands.registerCommand('extension.explorer_gtkwave', waveAsynCmd);
 
 	context.subscriptions.push(disposableExplorerGtkwave);
 }
@@ -145,6 +165,34 @@ function deactivate() {}
 module.exports = {
 	activate,
 	deactivate
+}
+
+
+/*
+**Function: displayCommandResult
+**usage: after invoking a GHDL command, displays the result in asynchronous way
+**parameters: 
+**  - Error code or null when OK
+**  - Command error output
+**  - Success message to display when no error
+**  - Asynchronous highlight errors function to call when not undefined and an error occured
+*/
+/**
+ * @param {import("child_process").ExecException} error
+ * @param {any} errorOutput
+ * @param {string} successMessage
+ * @param {{ (): Promise<void>; (): any; }} [highlighErrors]
+ */
+async function displayCommandResult(error, errorOutput, successMessage, highlighErrors) {
+	if (error) {
+		if (highlighErrors !== undefined) {
+			await highlighErrors();
+		}
+		vscode.window.showErrorMessage(errorOutput);
+		return;
+	  } else {
+		vscode.window.showInformationMessage(successMessage);
+	}
 }
 
 /*
@@ -157,25 +205,30 @@ module.exports = {
  * @param {string} filePath
  */
 function analyzeFile(filePath) {
+	removeDecorations(); // remove old decorations before adding new ones
 	const settings = new Settings(vscode)
-	const userOptions = settings.getSettingsString(settings.TaskEnum.analyze) //get user specific settings
-	const dirPath = vscode.workspace.rootPath; 
-	const fileName = path.basename(filePath); 
+	const userOptions = settings.getSettingsString(TaskEnum.analyze) //get user specific settings
+	const dirPath = getWorkspaceDirPath(filePath);
+	const fileName = path.basename(filePath);
 	const command = 'ghdl -a ' + userOptions + ' ' + '"' + filePath + '"'; //command to execute
 	console.log(command);
-	exec(command, {cwd: dirPath}, async (err, stdout, stderr) => { // execute command at workspace directory
-  		if (err) {
-			if(vscode.window.activeTextEditor.document.uri.fsPath != filePath) { // open analyzed file in editor, if ghdl analyze was invoked by explorer, with the file not open, and errors occured
-				let doc = await vscode.workspace.openTextDocument(filePath);
-				await vscode.window.showTextDocument(doc); // wait till text editor is shown and set as active editor
+
+	const cmdOutputProcessing = async (/** @type {import("child_process").ExecException} */ err, /** @type {any} */ stdout, /** @type {any} */ stderr) => 
+		{ 
+			// Asynchronous closure that displays in the analyzed file, the errors generated by the command
+			const highlighErrors = async () => { 
+				if(vscode.window.activeTextEditor.document.uri.fsPath != filePath) { // open analyzed file in editor, if ghdl analyze was invoked by explorer, with the file not open, and errors occured
+					let doc = await vscode.workspace.openTextDocument(filePath);
+					await vscode.window.showTextDocument(doc); // wait till text editor is shown and set as active editor
+				}
+				showErrors(err); // highlightes the errors in the editor
 			}
-			showErrors(err); // highlightes the errors in the editor
-			vscode.window.showErrorMessage(stderr);
-    		return;
-  		} else {
-			vscode.window.showInformationMessage(fileName + ' analyzed successfully without errors');
-		}
-	});
+
+			await displayCommandResult(err, stderr, fileName + ' analyzed successfully without errors', highlighErrors);
+			/*unused*/ stdout; 
+		};
+		
+	exec(command, {cwd: dirPath}, cmdOutputProcessing);
 }
 
 /*
@@ -189,20 +242,19 @@ function analyzeFile(filePath) {
  */
 function elaborateFiles(filePath) {
 	const settings = new Settings(vscode)
-	const userOptions = settings.getSettingsString(settings.TaskEnum.elaborate) //get user specific settings
-	const dirPath = vscode.workspace.rootPath; 
+	const userOptions = settings.getSettingsString(TaskEnum.elaborate) //get user specific settings
+	const dirPath = getWorkspaceDirPath(filePath);
 	const fileName = path.basename(filePath);
-	const unitName = fileName.substr(0, fileName.lastIndexOf("."));
+	const unitName = fileName.substring(0, fileName.lastIndexOf("."));
 	const command = 'ghdl -e ' + userOptions + ' ' + unitName; //command to execute (elaborate vhdl file)
 	console.log(command);
-	exec(command, {cwd: dirPath}, async (err, stdout, stderr) => { // execute command at workspace directory
-  		if (err) {
-			vscode.window.showErrorMessage(stderr);
-    		return;
-  		} else {
-			vscode.window.showInformationMessage(unitName + ' elaborated successfully without errors');
-		}
-	});
+
+	const cmdOutputProcessing = async (/** @type {any} */ err, /** @type {any} */ stdout, /** @type {any} */ stderr) => { 
+		await displayCommandResult(err, stderr, fileName + ' elaborated successfully without errors');
+		/*unused*/ stdout; 
+	};
+
+	exec(command, {cwd: dirPath}, cmdOutputProcessing);
 }
 
 /*
@@ -216,43 +268,44 @@ function elaborateFiles(filePath) {
  */
 function runUnit(filePath) {
 	const settings = new Settings(vscode)
-	const userOptions = settings.getSettingsString(settings.TaskEnum.run) //get user specific settings
-	const dirPath = vscode.workspace.rootPath; 
+	const userOptions = settings.getSettingsString(TaskEnum.run) //get user specific settings
+	const dirPath = getWorkspaceDirPath(filePath); 
 	const fileName = path.basename(filePath);
-	const unitName = fileName.substr(0, fileName.lastIndexOf("."));
+	const unitName = fileName.substring(0, fileName.lastIndexOf("."));
 	vscode.window.showSaveDialog(ghwDialogOptions).then(fileInfos => {
 		const simFilePath = fileInfos.path + '.ghw';
 		const command = 'ghdl -r ' + userOptions + ' ' + unitName + ' ' + '--wave=' + '"' + simFilePath + '"'; //command to execute (run unit)
 		console.log(command);
-		exec(command, {cwd: dirPath}, async (err, stdout, stderr) => { // execute command at workspace directory
-			  if (err) {
-				vscode.window.showErrorMessage(stderr);
-				return;
-			  } else {
-				vscode.window.showInformationMessage(unitName + ' elaborated successfully without errors');
-			}
-		});
+
+		const cmdOutputProcessing = async (/** @type {any} */ err, /** @type {any} */ stdout, /** @type {any} */ stderr) => { 
+			await displayCommandResult(err, stderr, fileName + ' elaborated successfully without errors');
+			/*unused*/ stdout; 
+		};
+		
+		exec(command, {cwd: dirPath}, cmdOutputProcessing);
 	});
 }
 
 /*
 **Function: cleanGeneratedFiles
 **usage: removes generated object files 
-**parameter: none
+**parameter: filePath
 **return value(s): none
  */
-function cleanGeneratedFiles() {
-	const dirPath = vscode.workspace.rootPath; 
+/**
+ * @param {string} filePath
+ */
+function cleanGeneratedFiles(filePath) {
+	const dirPath = getWorkspaceDirPath(filePath); 
 	const command = 'ghdl --clean'; //command to execute (clean generated files)
 	console.log(command);
-	exec(command, {cwd: dirPath}, async (err, stdout, stderr) => { // execute command at workspace directory
-  		if (err) {
-			vscode.window.showErrorMessage(stderr);
-    		return;
-  		} else {
-			vscode.window.showInformationMessage('successfully cleaned generated files');
-		}
-	});
+
+	const cmdOutputProcessing = async (/** @type {any} */ err, /** @type {any} */ stdout, /** @type {any} */ stderr) => { 
+		await displayCommandResult(err, stderr, 'successfully cleaned generated files');
+		/*unused*/ stdout; 
+	};
+	
+	exec(command, {cwd: dirPath}, cmdOutputProcessing);
 }
 
 /*
@@ -265,14 +318,13 @@ function removeGeneratedFiles() {
 	const dirPath = vscode.workspace.rootPath; 
 	const command = 'ghdl --remove'; //command to execute (remove generated files)
 	console.log(command);
-	exec(command, {cwd: dirPath}, async (err, stdout, stderr) => { // execute command at workspace directory
-  		if (err) {
-			vscode.window.showErrorMessage(stderr);
-    		return;
-  		} else {
-			vscode.window.showInformationMessage('successfully removed generated files');
-		}
-	});
+
+	const cmdOutputProcessing = async (/** @type {any} */ err, /** @type {any} */ stdout, /** @type {any} */ stderr) => { 
+		await displayCommandResult(err, stderr, 'successfully removed generated files');
+		/*unused*/ stdout; 
+	};
+	
+	exec(command, {cwd: dirPath}, cmdOutputProcessing);
 }
 
 /*
@@ -325,7 +377,7 @@ function showErrors(err) {
 */
 /**
  * @param {any[]} errStr
- * @param {import("../../../VSCode_Extensions/ghdl-interface/src/util/linkedlist/LinkedList")} errorList
+ * @param {LinkedList} errorList
  */
 function setErrorList(errStr, errorList) {
 	let errHints = []; // all error hits in the error message
@@ -347,12 +399,12 @@ function setErrorList(errStr, errorList) {
 		const keySQM = errHint.match(/'(.*?)'/g); //keywords single quitation marks
 		const keyDQM = errHint.match(/"(.*?)"/g); //keywords double quotation marks
 		if(keyDQM != null) { // delete double quotation marks of message
-			keyDQM.forEach(function(keywrd) {
+			keyDQM.forEach(function(/** @type {string} */ keywrd) {
 				bufKeywrds.push(keywrd.replace(/"/g, '')); 
 			});
 		} 
 		if(keySQM != null) {
-			keySQM.forEach(function(keywrd) { // delete single quotation marks of message
+			keySQM.forEach(function(/** @type {string} */ keywrd) { // delete single quotation marks of message
 				bufKeywrds.push(keywrd.replace(/'/g, ''));
 			});
 		}
@@ -372,7 +424,7 @@ function setErrorList(errStr, errorList) {
 **return value(s): none
 */
 /**
- * @param {import("../../../VSCode_Extensions/ghdl-interface/src/util/linkedlist/LinkedList")} errorList
+ * @param {LinkedList} errorList
  */
 function decorateErrors(errorList) {
 	let activeEditor = vscode.window.activeTextEditor; // active text editor 
