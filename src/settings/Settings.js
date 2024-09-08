@@ -83,7 +83,7 @@ class Settings {
     }
 
     getExtensionId() {
-        const extensionId = "ghdl-interface";
+        const extensionId = "vhdl-wave";
 
         return extensionId; 
     }

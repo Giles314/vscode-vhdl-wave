@@ -1,16 +1,16 @@
 {
-	"name": "ghdl-interface",
-	"displayName": "GHDL Interface",
-	"description": "VSCode interface for GHDL",
-	"publisher": "johannesbonk",
-	"version": "1.1.2",
+	"name": "vhdl-wave",
+	"displayName": "VHDL-Wave",
+	"description": "VSCode extension for VHDL simulation with GHDL and GTKWave",
+	"publisher": "Giles314",
+	"version": "1.0.0",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/johannesbonk/vscode-ghdl-interface"
+		"url": "https://github.com/Giles314/vscode-vhdl-wave"
 	},
 	"license": "SEE LICENSE in LICENSE.md",
 	"bugs": {
-		"url": "https://github.com/johannesbonk/vscode-ghdl-interface/issues"
+		"url": "https://github.com/Giles314/vscode-vhdl-wave/issues"
 	},
 	"icon": "res/icon.png",
 	"galleryBanner": {
@@ -30,7 +30,8 @@
 		"hdl",
 		"vhdl",
 		"VHDL",
-		"gtkwave"
+		"gtkwave",
+		"GTKWave"
 	],
 	"activationEvents": [
 		"onCommand:extension.editor_ghdl-analyze_file",
@@ -97,19 +98,19 @@
 			{
 				"title": "GHDL Interface",
 				"properties": {
-					"ghdl-interface.library.WorkLibraryName": {
+					"vhdl-wave.library.WorkLibraryName": {
 						"type": "string",
 						"scope": "resource",
 						"default": "",
 						"description": "Specifies the name of the 'WORK' library (set to the default name 'WORK' if left blank)"
 					},
-					"ghdl-interface.library.WorkLibraryPath": {
+					"vhdl-wave.library.WorkLibraryPath": {
 						"type": "string",
 						"scope": "resource",
 						"default": "",
 						"description": "Specifies the directory where the 'WORK' library is located (set to the workspace top directory if left blank)"
 					},
-					"ghdl-interface.library.LibraryDirectories": {
+					"vhdl-wave.library.LibraryDirectories": {
 						"type": "array",
 						"items": {
 							"type": "string"
@@ -119,7 +120,7 @@
 						"format": "uri",
 						"description": "Specifies the directory/path where GHDL searchs for '.cf' library files (not used if left blank)"
 					},
-					"ghdl-interface.standard.VHDL": {
+					"vhdl-wave.standard.VHDL": {
 						"type": "string",
 						"scope": "resource",
 						"default": "93c",
@@ -133,7 +134,7 @@
 						],
 						"description": "Specifies the VHDL standard to use"
 					},
-					"ghdl-interface.standard.IEEE": {
+					"vhdl-wave.standard.IEEE": {
 						"type": "string",
 						"scope": "resource",
 						"default": "standard",
@@ -144,13 +145,13 @@
 						],
 						"description": "Specifies VHDL standard to use"
 					},
-					"ghdl-interface.general.verbose": {
+					"vhdl-wave.general.verbose": {
 						"type": "boolean",
 						"scope": "resource",
 						"default": false,
 						"description": "Tells GHDL to be verbose"
 					},
-					"ghdl-interface.simulation.TimeResolution": {
+					"vhdl-wave.simulation.TimeResolution": {
 						"type": "string",
 						"scope": "resource",
 						"default": "auto",
@@ -165,37 +166,37 @@
 						],
 						"description": "Sets the base time resolution for the simulation"
 					},
-					"ghdl-interface.general.RelaxedRules": {
+					"vhdl-wave.general.RelaxedRules": {
 						"type": "boolean",
 						"scope": "resource",
 						"default": false,
 						"description": "Set relaxed rules to be compatible with other simulators or synthesizers"
 					},
-					"ghdl-interface.general.vitalChecks": {
+					"vhdl-wave.general.vitalChecks": {
 						"type": "boolean",
 						"scope": "resource",
 						"default": true,
 						"description": "Enable chacksof restriction on VITAL units"
 					},
-					"ghdl-interface.general.PSL": {
+					"vhdl-wave.general.PSL": {
 						"type": "boolean",
 						"scope": "resource",
 						"default": false,
 						"description": "Enable parsing of PSL assertions within comments"
 					},
-					"ghdl-interface.general.explicit": {
+					"vhdl-wave.general.explicit": {
 						"type": "boolean",
 						"scope": "resource",
 						"default": false,
 						"description": "When two operators are overloaded, give preference to the explicit declaration"
 					},
-					"ghdl-interface.general.synBinding": {
+					"vhdl-wave.general.synBinding": {
 						"type": "boolean",
 						"scope": "resource",
 						"default": false,
 						"description": "Use synthesizer rules for component binding"
 					},
-					"ghdl-interface.general.mbComments": {
+					"vhdl-wave.general.mbComments": {
 						"type": "boolean",
 						"scope": "resource",
 						"default": false,

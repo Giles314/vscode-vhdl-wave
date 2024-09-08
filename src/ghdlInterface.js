@@ -112,7 +112,7 @@ function getWorkspaceDirPath(filePath) {
  * @param {vscode.ExtensionContext} context
  */
 function activate(context) {
-	console.log('ghdl-interface now active!'); // log extension start
+	console.log('VHDL-Wave now active!'); // log extension start
 
 	//-- Asynchronous functions to process commands
 	const analyzeAsyncCmd = async (/** @type {any} */ selectedFile) => {
