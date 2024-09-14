@@ -1,5 +1,5 @@
 <h1 align="center"> VHDL Wave </h1>
-This extension allows you to invoke GHDL functions, as well as GTKWave to perform simlation of VHDL files. Beyond it highlights the errors that were reported by GHDL in the editor. 
+This extension allows you to invoke GHDL functions, as well as GTKWave to perform simlation of VHDL files. Beyond, it lists the errors that were reported by GHDL in the GHDL Output channel. Using <ctrl> key you can click the description of the error location in the log to reach that location and fix your mistake.
 
 ![ghdl](res/ghdl_demo.gif)
 
