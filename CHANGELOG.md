@@ -2,6 +2,11 @@
 
 ## VHDL-Wave
 
+### version 1.1.0 - 14.09.2024
+
+* #1 - Use the output channel to display GHDL output
+* #2 - Add test data to be also used for creating the animated GIF
+
 ### version 1.0.0 - 08.09.2024
 
 * Name and maintainer change
