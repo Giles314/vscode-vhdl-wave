@@ -167,6 +167,12 @@
             ],
             "description": "Sets the base time resolution for the simulation"
           },
+          "vhdl-wave.simulation.StopTime": {
+            "type": "string",
+            "scope": "resource",
+            "default": "1sec",
+            "description": "Sets the maximum duration of the simulation"
+          },
           "vhdl-wave.general.RelaxedRules": {
             "type": "boolean",
             "scope": "resource",

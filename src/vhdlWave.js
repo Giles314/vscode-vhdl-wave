@@ -20,7 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-const vscode = require('vscode');
+const vscode   = require('vscode');
+const path     = require('path');
 const { exec } = require('child_process');
 
 // The channel that will be used to output errors
@@ -177,8 +178,10 @@ function executeCommand(command, dirPath, successMessage) {
 
 		const cmdOutputProcessing = async (/** @type {import("child_process").ExecException} */ err, /** @type {any} */ stdout, /** @type {any} */ stderr) => 
 			{ 
+				if (successMessage == '') {
+					successMessage = stderr;
+				}
 				await displayCommandResult(err, stderr, successMessage);
-				/*unused*/ stdout; 
 			};
 			
 		exec(command, {cwd: dirPath}, cmdOutputProcessing);
@@ -211,7 +214,7 @@ function analyzeFile(filePath) {
  * @param {string} filePath
  */
 function elaborateFiles(filePath) {
-	const [ dirPath, userOptions, fileName ] = settings.get(filePath, TaskEnum.elaborate); //get user specific settings
+	const [ dirPath, userOptions, fileName, ] = settings.get(filePath, TaskEnum.elaborate); //get user specific settings
 	const unitName = fileName.substring(0, fileName.lastIndexOf("."));
 	const command = 'ghdl -e' + userOptions + ' ' + unitName; //command to execute (elaborate vhdl file)
 	executeCommand(command, dirPath, fileName + ' elaborated without errors');
@@ -227,7 +230,7 @@ function elaborateFiles(filePath) {
  * @param {string} filePath
  */
 function runUnit(filePath) {
-	const [ dirPath, userOptions, fileName ] = settings.get(filePath, TaskEnum.run); //get user specific settings
+	const [ dirPath, userOptions, fileName, runOptions ] = settings.get(filePath, TaskEnum.run); //get user specific settings
 	if (dirPath === null) {
 		// Use execute command to print the error about directory
 		executeCommand('', dirPath, '');
@@ -235,9 +238,12 @@ function runUnit(filePath) {
 	else {
 		const unitName = fileName.substring(0, fileName.lastIndexOf("."));
 		vscode.window.showSaveDialog(ghwDialogOptions).then(fileInfos => {
-			const simFilePath = fileInfos.path + '.ghw';
-			const command = 'ghdl -r' + userOptions + ' ' + unitName + ' ' + '--wave=' + '"' + simFilePath + '"'; //command to execute (run unit)
-			executeCommand(command, dirPath, fileName + ' run without errors');
+			let simFilePath = path.normalize(fileInfos.path);
+			if (simFilePath.charAt(0) == '\\') {
+				simFilePath = simFilePath.substring(1);
+			}
+			const command = 'ghdl -r' + userOptions + ' ' + unitName + ' ' + '--wave=' + '"' + simFilePath + '"' + runOptions + ' >&2'; //command to execute (run unit)
+			executeCommand(command, dirPath, '');
 		});
 	}
 }
@@ -252,7 +258,7 @@ function runUnit(filePath) {
  * @param {string} filePath
  */
 function cleanGeneratedFiles(filePath) {
-	const [ dirPath,  , ] = settings.get(filePath); 
+	const [ dirPath,  ,  , ] = settings.get(filePath); 
 	const command = 'ghdl --clean'; //command to execute (clean generated files)
 	executeCommand(command, dirPath, 'cleaned generated files');
 }
@@ -264,7 +270,7 @@ function cleanGeneratedFiles(filePath) {
 **return value(s): none
  */
 function removeGeneratedFiles(filePath) {
-	const [ dirPath,  ,  ] = settings.get(filePath); 
+	const [ dirPath,  ,  ,  ] = settings.get(filePath); 
 	const command = 'ghdl --remove'; //command to execute (remove generated files)
 	executeCommand(command, dirPath, 'removed generated files');
 }

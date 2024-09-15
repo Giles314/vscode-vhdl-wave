@@ -75,9 +75,10 @@ class Settings {
      * @param {number} [task]
      */
     get(filePath, task) {
-        let settingsString = ""
+        let settingsString = "";
+        let runOptions = "";
         let dirPath = this.getWorkspaceDirPath(filePath);
-        const workspaceConfig = this.vscode.workspace.getConfiguration(this.getExtensionId())
+        const workspaceConfig = this.vscode.workspace.getConfiguration(this.getExtensionId());
         const workDir = this.getWorkLibraryPath(workspaceConfig, dirPath);
         if (! Array.isArray(workDir)) {
             if(task == TaskEnum.analyze) {
@@ -120,13 +121,14 @@ class Settings {
                                     this.getExplicit(workspaceConfig) +
                                     this.getSynBinding(workspaceConfig) +
                                     this.getMbComments(workspaceConfig)
+                runOptions = this.getStopTime(workspaceConfig);
             }
         }
         else {
             //-- Report error with the array containing the missing directory path
             dirPath = workDir;
         }
-        return [ dirPath, settingsString, path.basename(filePath) ];
+        return [ dirPath, settingsString, path.basename(filePath), runOptions ];
     }
 
     getExtensionId() {
@@ -220,6 +222,17 @@ class Settings {
         const timeRes = workspaceConfig.get("simulation.TimeResolution")
         const cmdOption = " --time-resolution=" + timeRes
         return cmdOption
+    }
+
+    /**
+     * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     */
+    getStopTime(workspaceConfig) {
+        let stopTime = workspaceConfig.get("simulation.StopTime");
+        if(stopTime == '') {
+            stopTime = '1sec'
+        }
+        return ` --stop-time=${stopTime}`;
     }
 
     /**
