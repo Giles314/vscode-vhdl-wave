@@ -21,7 +21,6 @@
 // SOFTWARE.
 
 const vscode = require('vscode');
-const path = require('path'); 
 const { exec } = require('child_process');
 
 // The channel that will be used to output errors
@@ -37,6 +36,7 @@ let outputChannel;
 
 const { Settings, TaskEnum } = require('./settings/Settings');
   
+const settings = new Settings(vscode)
 
 /*Function: getSelectedFilePath
 **usage: when called from editor, file is given just return it,
@@ -57,29 +57,6 @@ function getSelectedFilePath(givenUri) {
 	return selectedFileUri.fsPath;
 }
 
-/*
-**Function: getWorkspaceDirPath
-**usage: Provides the directory path of the project environment.
-**Usually this corresponds to the first working folder.
-**When user has not defined any, use the directory of compiled file
-**Parameter : the compile file path
-**return value(s): the path of the workspace directory
-*/
-/**
- * @param {string} filePath
- */
-function getWorkspaceDirPath(filePath) {
-	let dirPath;
-	const Folders = vscode.workspace.workspaceFolders;
-	if (Folders == undefined) {
-		dirPath = path.dirname(filePath); // When no workspace folder is defined use the file folder
-	} else {
-		dirPath = Folders[0].uri.fsPath;  // Get path of workspace root directory where the ghdl command must be run by default
-	}
-	return dirPath;
-}
-
-
 
 // this method is called when vs code is activated
 /**
@@ -98,7 +75,7 @@ function activate(context) {
 	const elabAsyncCmd   = async (/** @type {any} */ selectedFile) => { elaborateFiles(getSelectedFilePath(selectedFile)); }
 	const runAsyncCmd    = async (/** @type {any} */ selectedFile) => { runUnit(getSelectedFilePath(selectedFile)); }
 	const cleanAsynCmd   = async (/** @type {any} */ selectedFile) => { cleanGeneratedFiles(getSelectedFilePath(selectedFile)); }
-	const removeAsynCmd  = async (/** @type {any} */ selectedFile) => { removeGeneratedFiles(); /*unused*/ selectedFile; }
+	const removeAsynCmd  = async (/** @type {any} */ selectedFile) => { removeGeneratedFiles(getSelectedFilePath(selectedFile)); }
 	const waveAsynCmd    = async (/** @type {{ fsPath: string; }} */ selectedFile) => { invokeGtkwave(selectedFile.fsPath); }
 	
 	let disposableEditorAnalyze = vscode.commands.registerCommand('extension.editor_ghdl-analyze_file', analyzeAsyncCmd);
@@ -164,42 +141,64 @@ module.exports = {
  * @param {any} errorOutput
  * @param {string} successMessage
  */
-async function displayCommandResult(error, errorOutput, successMessage) {
+function displayCommandResult(error, errorOutput, successMessage) {
 	outputChannel.clear();
 	outputChannel.show();
 
 	if (error) {
 		outputChannel.appendLine(error.message);
 		return;
-	  } else {
+	} 
+	else {
 		outputChannel.appendLine(`\nSuccess: ${successMessage}`);
 	}
 }
 
 /*
+**Function: executeCommand
+**usage: invoke the given command in given dirPath unless dirPath is null
+**parameters: 
+** - Command to execute; 
+** - Directory where to execute the command; 
+** - Message to display in case of success.
+**return value: none
+*/
+/**
+ * @param {string} command
+ * @param {string} dirPath
+ * @param {string} successMessage
+ */
+function executeCommand(command, dirPath, successMessage) {
+	if (Array.isArray(dirPath)) {
+		vscode.window.showErrorMessage(`Path of library 'WORK' not found. Create '${dirPath[0]}' or check value in extension settings`);
+	} 
+	else {
+		console.log(command);
+
+		const cmdOutputProcessing = async (/** @type {import("child_process").ExecException} */ err, /** @type {any} */ stdout, /** @type {any} */ stderr) => 
+			{ 
+				await displayCommandResult(err, stderr, successMessage);
+				/*unused*/ stdout; 
+			};
+			
+		exec(command, {cwd: dirPath}, cmdOutputProcessing);
+	}
+}
+
+
+/*
 **Function: analyzeFile
 **usage: invokes ghdl to analyze file from filePath parameter
 **parameter: path of the file to analyze
-**return value(s): none
+**return value: none
 */
 /**
  * @param {string} filePath
  */
 function analyzeFile(filePath) {
-	const settings = new Settings(vscode)
-	const userOptions = settings.getSettingsString(TaskEnum.analyze) //get user specific settings
-	const dirPath = getWorkspaceDirPath(filePath);
-	const fileName = path.basename(filePath);
-	const command = 'ghdl -a ' + userOptions + ' ' + '"' + filePath + '"'; //command to execute
-	console.log(command);
-
-	const cmdOutputProcessing = async (/** @type {import("child_process").ExecException} */ err, /** @type {any} */ stdout, /** @type {any} */ stderr) => 
-		{ 
-			await displayCommandResult(err, stderr, fileName + ' analyzed without errors');
-			/*unused*/ stdout; 
-		};
-		
-	exec(command, {cwd: dirPath}, cmdOutputProcessing);
+	const [ dirPath, userOptions, fileName ] = settings.get(filePath, TaskEnum.analyze); //get user specific settings
+	const command = 'ghdl -a' + userOptions + ' ' + '"' + filePath + '"'; //command to execute
+	executeCommand(command, dirPath, fileName + ' analyzed without errors');
 }
 
 /*
@@ -212,20 +211,10 @@ function analyzeFile(filePath) {
  * @param {string} filePath
  */
 function elaborateFiles(filePath) {
-	const settings = new Settings(vscode)
-	const userOptions = settings.getSettingsString(TaskEnum.elaborate) //get user specific settings
-	const dirPath = getWorkspaceDirPath(filePath);
-	const fileName = path.basename(filePath);
+	const [ dirPath, userOptions, fileName ] = settings.get(filePath, TaskEnum.elaborate); //get user specific settings
 	const unitName = fileName.substring(0, fileName.lastIndexOf("."));
-	const command = 'ghdl -e ' + userOptions + ' ' + unitName; //command to execute (elaborate vhdl file)
-	console.log(command);
-
-	const cmdOutputProcessing = async (/** @type {any} */ err, /** @type {any} */ stdout, /** @type {any} */ stderr) => { 
-		await displayCommandResult(err, stderr, fileName + ' elaborated without errors');
-		/*unused*/ stdout; 
-	};
-
-	exec(command, {cwd: dirPath}, cmdOutputProcessing);
+	const command = 'ghdl -e' + userOptions + ' ' + unitName; //command to execute (elaborate vhdl file)
+	executeCommand(command, dirPath, fileName + ' elaborated without errors');
 }
 
 /*
@@ -238,23 +227,19 @@ function elaborateFiles(filePath) {
  * @param {string} filePath
  */
 function runUnit(filePath) {
-	const settings = new Settings(vscode)
-	const userOptions = settings.getSettingsString(TaskEnum.run) //get user specific settings
-	const dirPath = getWorkspaceDirPath(filePath); 
-	const fileName = path.basename(filePath);
-	const unitName = fileName.substring(0, fileName.lastIndexOf("."));
-	vscode.window.showSaveDialog(ghwDialogOptions).then(fileInfos => {
-		const simFilePath = fileInfos.path + '.ghw';
-		const command = 'ghdl -r ' + userOptions + ' ' + unitName + ' ' + '--wave=' + '"' + simFilePath + '"'; //command to execute (run unit)
-		console.log(command);
-
-		const cmdOutputProcessing = async (/** @type {any} */ err, /** @type {any} */ stdout, /** @type {any} */ stderr) => { 
-			await displayCommandResult(err, stderr, fileName + ' elaborated without errors');
-			/*unused*/ stdout; 
-		};
-		
-		exec(command, {cwd: dirPath}, cmdOutputProcessing);
-	});
+	const [ dirPath, userOptions, fileName ] = settings.get(filePath, TaskEnum.run); //get user specific settings
+	if (dirPath === null) {
+		// Use execute command to print the error about directory
+		executeCommand('', dirPath, '');
+	}
+	else {
+		const unitName = fileName.substring(0, fileName.lastIndexOf("."));
+		vscode.window.showSaveDialog(ghwDialogOptions).then(fileInfos => {
+			const simFilePath = fileInfos.path + '.ghw';
+			const command = 'ghdl -r' + userOptions + ' ' + unitName + ' ' + '--wave=' + '"' + simFilePath + '"'; //command to execute (run unit)
+			executeCommand(command, dirPath, fileName + ' run without errors');
+		});
+	}
 }
 
 /*
@@ -267,16 +252,9 @@ function runUnit(filePath) {
  * @param {string} filePath
  */
 function cleanGeneratedFiles(filePath) {
-	const dirPath = getWorkspaceDirPath(filePath); 
+	const [ dirPath,  , ] = settings.get(filePath); 
 	const command = 'ghdl --clean'; //command to execute (clean generated files)
-	console.log(command);
-
-	const cmdOutputProcessing = async (/** @type {any} */ err, /** @type {any} */ stdout, /** @type {any} */ stderr) => { 
-		await displayCommandResult(err, stderr, 'cleaned generated files');
-		/*unused*/ stdout; 
-	};
-	
-	exec(command, {cwd: dirPath}, cmdOutputProcessing);
+	executeCommand(command, dirPath, 'cleaned generated files');
 }
 
 /*
@@ -285,17 +263,10 @@ function cleanGeneratedFiles(filePath) {
 **parameter: none
 **return value(s): none
  */
-function removeGeneratedFiles() {
-	const dirPath = vscode.workspace.rootPath; 
+function removeGeneratedFiles(filePath) {
+	const [ dirPath,  ,  ] = settings.get(filePath); 
 	const command = 'ghdl --remove'; //command to execute (remove generated files)
-	console.log(command);
-
-	const cmdOutputProcessing = async (/** @type {any} */ err, /** @type {any} */ stdout, /** @type {any} */ stderr) => { 
-		await displayCommandResult(err, stderr, 'removed generated files');
-		/*unused*/ stdout; 
-	};
-	
-	exec(command, {cwd: dirPath}, cmdOutputProcessing);
+	executeCommand(command, dirPath, 'removed generated files');
 }
 
 /*

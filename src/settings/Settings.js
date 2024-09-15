@@ -24,91 +24,142 @@
 
  
 
-const fs = require('fs');
+const fs     = require('fs');
+const path   = require('path'); 
 
 const TaskEnum = Object.freeze({"analyze":1, "elaborate":2, "run":3});
+
 
 class Settings {
     constructor(vscode) {
         this.vscode = vscode; 
     }
 
-    getSettingsString(task) {
-        const workspaceConfig = this.vscode.workspace.getConfiguration(this.getExtensionId())
-        let settingsString = ""
-        if(task == TaskEnum.analyze) {
-            settingsString =    this.getWorkDirectoryName(workspaceConfig) + " " + 
-                                this.getWorkLibraryPath(workspaceConfig) + " " + 
-                                this.getLibraryDirectory(workspaceConfig) + " " +
-                                this.getVhdlStandard(workspaceConfig) + " " + 
-                                this.getIeeeVersion(workspaceConfig) + " " +
-                                this.getVerbose(workspaceConfig) + " " +
-                                this.getRelaxedRules(workspaceConfig) + " " +
-                                this.getVitalChecks(workspaceConfig) + " " +
-                                this.getPsl(workspaceConfig) + " " +
-                                this.getExplicit(workspaceConfig) + " " +
-                                this.getSynBinding(workspaceConfig) + " " +
-                                this.getMbComments(workspaceConfig)
-        } else if(task == TaskEnum.elaborate) {
-            settingsString =    this.getWorkDirectoryName(workspaceConfig) + " " + 
-                                this.getWorkLibraryPath(workspaceConfig) + " " + 
-                                this.getLibraryDirectory(workspaceConfig) + " " +
-                                this.getVhdlStandard(workspaceConfig) + " " + 
-                                this.getIeeeVersion(workspaceConfig) + " " +
-                                this.getVerbose(workspaceConfig) + " " +
-                                this.getRelaxedRules(workspaceConfig) + " " +
-                                this.getVitalChecks(workspaceConfig) + " " +
-                                this.getPsl(workspaceConfig) + " " +
-                                this.getExplicit(workspaceConfig) + " " +
-                                this.getSynBinding(workspaceConfig) + " " +
-                                this.getMbComments(workspaceConfig)
-        } else if(task == TaskEnum.run) {
-            settingsString =    this.getWorkDirectoryName(workspaceConfig) + " " + 
-                                this.getWorkLibraryPath(workspaceConfig) + " " + 
-                                this.getLibraryDirectory(workspaceConfig) + " " +
-                                this.getVhdlStandard(workspaceConfig) + " " + 
-                                this.getIeeeVersion(workspaceConfig) + " " +
-                                this.getVerbose(workspaceConfig) + " " +
-                                this.getTimeResolution(workspaceConfig) + " " +
-                                this.getRelaxedRules(workspaceConfig) + " " +
-                                this.getVitalChecks(workspaceConfig) + " " +
-                                this.getPsl(workspaceConfig) + " " +
-                                this.getExplicit(workspaceConfig) + " " +
-                                this.getSynBinding(workspaceConfig) + " " +
-                                this.getMbComments(workspaceConfig)
+
+    /**
+     * @param {string} filePath
+     */
+    getWorkspaceDirPath(filePath) {
+        let dirPath;
+        const Folders = this.vscode.workspace.workspaceFolders;
+        if (Folders == undefined) {
+            dirPath = path.dirname(filePath); // When no workspace folder is defined use the file folder
         } else {
-            return null; 
+            dirPath = Folders[0].uri.fsPath;  // Get path of workspace root directory where the ghdl command must be run by default
         }
-        return settingsString
+        return dirPath;
+    }
+
+    /**
+     * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     * @param {string} dirPath
+     */
+    getWorkLibraryPath(workspaceConfig, dirPath) {
+        let libPath = workspaceConfig.get("library.WorkLibraryPath")
+        if((libPath == "") || (libPath == null)) {
+            libPath = ""
+        } else {
+            if (! path.isAbsolute(libPath)) {
+                libPath = path.join(dirPath, libPath);
+            }
+            if(! fs.existsSync(libPath)) {
+                // Include the path inside a library to indicate it does not exists
+                libPath = [ libPath ];
+            }
+        }
+        return libPath;
+    }
+
+    /**
+     * @param {string} filePath
+     * @param {number} [task]
+     */
+    get(filePath, task) {
+        let settingsString = ""
+        let dirPath = this.getWorkspaceDirPath(filePath);
+        const workspaceConfig = this.vscode.workspace.getConfiguration(this.getExtensionId())
+        const workDir = this.getWorkLibraryPath(workspaceConfig, dirPath);
+        if (! Array.isArray(workDir)) {
+            if(task == TaskEnum.analyze) {
+                settingsString =    this.getWorkDirectoryName(workspaceConfig) +
+                                    this.getWorkLibraryOption(workDir) +
+                                    this.getLibraryDirectory(workspaceConfig) +
+                                    this.getVhdlStandard(workspaceConfig) +
+                                    this.getIeeeVersion(workspaceConfig) +
+                                    this.getVerbose(workspaceConfig) +
+                                    this.getRelaxedRules(workspaceConfig) +
+                                    this.getVitalChecks(workspaceConfig) +
+                                    this.getPsl(workspaceConfig) +
+                                    this.getExplicit(workspaceConfig) +
+                                    this.getSynBinding(workspaceConfig) +
+                                    this.getMbComments(workspaceConfig)
+            } else if(task == TaskEnum.elaborate) {
+                settingsString =    this.getWorkDirectoryName(workspaceConfig) +
+                                    this.getWorkLibraryOption(workDir) +
+                                    this.getLibraryDirectory(workspaceConfig) +
+                                    this.getVhdlStandard(workspaceConfig) + 
+                                    this.getIeeeVersion(workspaceConfig) +
+                                    this.getVerbose(workspaceConfig) +
+                                    this.getRelaxedRules(workspaceConfig) + 
+                                    this.getVitalChecks(workspaceConfig) +
+                                    this.getPsl(workspaceConfig) +
+                                    this.getExplicit(workspaceConfig) +
+                                    this.getSynBinding(workspaceConfig) +
+                                    this.getMbComments(workspaceConfig)
+            } else if(task == TaskEnum.run) {
+                settingsString =    this.getWorkDirectoryName(workspaceConfig) + 
+                                    this.getWorkLibraryOption(workDir) +
+                                    this.getLibraryDirectory(workspaceConfig) +
+                                    this.getVhdlStandard(workspaceConfig) + 
+                                    this.getIeeeVersion(workspaceConfig) +
+                                    this.getVerbose(workspaceConfig) +
+                                    this.getTimeResolution(workspaceConfig) +
+                                    this.getRelaxedRules(workspaceConfig) +
+                                    this.getVitalChecks(workspaceConfig) +
+                                    this.getPsl(workspaceConfig) +
+                                    this.getExplicit(workspaceConfig) +
+                                    this.getSynBinding(workspaceConfig) +
+                                    this.getMbComments(workspaceConfig)
+            }
+        }
+        else {
+            //-- Report error with the array containing the missing directory path
+            dirPath = workDir;
+        }
+        return [ dirPath, settingsString, path.basename(filePath) ];
     }
 
     getExtensionId() {
-        const extensionId = "vhdl-wave";
-
-        return extensionId; 
+        return "vhdl-wave"; 
     }
 
+    /**
+     * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     */
     getWorkDirectoryName(workspaceConfig) {
         const libName = workspaceConfig.get("library.WorkLibraryName")
         if((libName != "") && (libName != null)) {
-            return "--work=" + libName
+            return " --work=" + libName
         } else {
             return ""
         }
     }
 
-    getWorkLibraryPath(workspaceConfig) {
-        const libPath = workspaceConfig.get("library.WorkLibraryPath")
-        if((libPath == "") || (libPath == null)) {
+    /**
+     * @param {string} workDir
+     */
+    getWorkLibraryOption(workDir) {
+        if(workDir == "") {
             return ""
-        } else if(fs.existsSync(libPath)) {
-            return "--workdir=" + libPath 
-        } else {
-            this.vscode.window.showInformationMessage("Specified path of library 'WORK' not found, ignoring argument. Check value in extension settings")
-            return ""; 
+        } 
+        else {
+            return " --workdir=" + workDir;
         }
     }
 
+    /**
+     * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     */
     getLibraryDirectory(workspaceConfig) {
         let cmdOption = "";
         const libPathArr = workspaceConfig.get("library.LibraryDirectories")
@@ -124,84 +175,114 @@ class Settings {
         return cmdOption;
     }
 
+    /**
+     * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     */
     getVhdlStandard(workspaceConfig) {
         const vhdlStd = workspaceConfig.get("standard.VHDL")
-        const cmdOption = "--std=" + vhdlStd
+        const cmdOption = " --std=" + vhdlStd
         return cmdOption
     }
 
+    /**
+     * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     */
     getIeeeVersion(workspaceConfig) {
         const ieeVer = workspaceConfig.get("standard.IEEE")
         let cmdOption = "";
         switch(ieeVer) {
             case "standard" :
-                cmdOption = "--ieee=" + ieeVer;
+                cmdOption = " --ieee=" + ieeVer;
                 break;
             case "none" :
                 break;
             default:
-                cmdOption = "-fsynopsys";
+                cmdOption = " -fsynopsys";
         }
         return cmdOption
     }
 
+    /**
+     * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     */
     getVerbose(workspaceConfig) {
         if(workspaceConfig.get("general.verbose")) {
-            return "-v"
+            return " -v"
         } else {
             return ""
         }
     }
 
+    /**
+     * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     */
     getTimeResolution(workspaceConfig) {
         const timeRes = workspaceConfig.get("simulation.TimeResolution")
-        const cmdOption = "--time-resolution=" + timeRes
+        const cmdOption = " --time-resolution=" + timeRes
         return cmdOption
     }
 
+    /**
+     * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     */
     getRelaxedRules(workspaceConfig) {
         if(workspaceConfig.get("general.RelaxedRules")) {
-            return "-frelaxed-rules"
+            return " -frelaxed-rules"
         } else {
             return ""
         }
     }
 
+    /**
+     * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     */
     getVitalChecks(workspaceConfig) {
         if(workspaceConfig.get("general.vitalChecks")) {
             return ""
         } else {
-            return "--no-vital-checks"
+            return " --no-vital-checks"
         }
     }
 
+    /**
+     * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     */
     getPsl(workspaceConfig) {
         if(workspaceConfig.get("general.PSL")) {
-            return "-fpsl"
+            return " -fpsl"
         } else {
             return ""
         }
     }
 
+    /**
+     * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     */
     getExplicit(workspaceConfig) {
         if(workspaceConfig.get("general.explicit")) {
-            return "-fexplicit"
+            return " -fexplicit"
         } else {
             return ""
         }
     }
 
+    /**
+     * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     */
     getSynBinding(workspaceConfig) {
         if(workspaceConfig.get("general.synBinding")) {
-            return "--syn-binding"
+            return " --syn-binding"
         } else {
             return ""
         }
     }
 
+    /**
+     * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     */
     getMbComments(workspaceConfig) {
         if(workspaceConfig.get("general.mbComments")) {
-            return "--mb-comments"
+            return " --mb-comments"
         } else {
             return ""
         }

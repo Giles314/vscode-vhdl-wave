@@ -103,13 +103,13 @@
             "type": "string",
             "scope": "resource",
             "default": "",
-            "description": "Specifies the name of the 'WORK' library (set to the default name 'WORK' if left blank)"
+            "description": "Specifies the name of the 'WORK' library. Set to the default name 'WORK' if left blank."
           },
           "vhdl-wave.library.WorkLibraryPath": {
             "type": "string",
             "scope": "resource",
             "default": "",
-            "description": "Specifies the directory where the 'WORK' library is located (set to the workspace top directory if left blank)"
+            "description": "Specifies the directory where the 'WORK' library is located. This directory MUST exist before using any command. Paths relative to the project folder are allowed. Set to the workspace top directory if left blank."
           },
           "vhdl-wave.library.LibraryDirectories": {
             "type": "array",
@@ -119,7 +119,7 @@
             "scope": "resource",
             "default": "",
             "format": "uri",
-            "description": "Specifies the directory/path where GHDL searchs for '.cf' library files (not used if left blank)"
+            "description": "Specifies the directory paths where GHDL searchs for '.cf' library files (not used if left blank)"
           },
           "vhdl-wave.standard.VHDL": {
             "type": "string",
@@ -133,7 +133,7 @@
               "02",
               "08"
             ],
-            "description": "Specifies the VHDL standard to use"
+            "description": "Specifies the VHDL language version to use"
           },
           "vhdl-wave.standard.IEEE": {
             "type": "string",
@@ -144,7 +144,7 @@
               "standard",
               "synopsis"
             ],
-            "description": "Specifies VHDL standard to use"
+            "description": "Specifies VHDL standard library to use"
           },
           "vhdl-wave.general.verbose": {
             "type": "boolean",
