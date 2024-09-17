@@ -155,7 +155,7 @@
           "vhdl-wave.simulation.TimeResolution": {
             "type": "string",
             "scope": "resource",
-            "default": "auto",
+            "default": "fs",
             "enum": [
               "auto",
               "fs",
@@ -165,7 +165,7 @@
               "ms",
               "sec"
             ],
-            "description": "Sets the base time resolution for the simulation"
+            "description": "Sets the base time resolution for the simulation. It must be the same resolution that GTKWave will use. In case of discrepency GTKWave graphic scale will be wrong."
           },
           "vhdl-wave.simulation.StopTime": {
             "type": "string",
