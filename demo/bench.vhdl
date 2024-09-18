@@ -1,15 +1,16 @@
 library ieee;
 use ieee.std_logic_1164.all;
+use std.textio.all;
 
 entity BENCH is
 end entity;
 
 architecture ALGO of BENCH is
-	signal CLOCK: std_logic := '0';
+	signal CLOCK: std_logic := '1';
 	signal RESET: std_logic := '1';
 	signal LED  : std_logic;
 
-	signal RST_DUR: integer := 0;
+	signal CLOCK_COUNT : integer := 0;
 	constant RST_DELAY : integer := 4;
 
 	component BLINK
@@ -19,6 +20,15 @@ architecture ALGO of BENCH is
 		LED   : OUT std_logic
 	);
 	end component BLINK;
+
+	procedure LOG_LOOP (LOOP_COUNT : in integer) is
+		variable PRINT_LINE : line;
+		constant LINE_LABEL : string := "Loop ";
+	begin
+		write(PRINT_LINE, LINE_LABEL);
+		write(PRINT_LINE, LOOP_COUNT, right, 9);
+		writeline(output, PRINT_LINE);
+	end LOG_LOOP;
 	
 
 begin
@@ -34,12 +44,13 @@ begin
 	PERIODIC_LOOP: process
 	begin
 		wait for 50 ns;
-		if RST_DUR < RST_DELAY then
-			RST_DUR <= RST_DUR + 1;
-		else
-			RESET <= '0';
-		end if;
 		CLOCK <= not CLOCK;
+		if CLOCK_COUNT mod 20000 = 0 then
+			LOG_LOOP(CLOCK_COUNT);
+		end if;
+		CLOCK_COUNT <= CLOCK_COUNT + 1;
 	end process;
+
+	RESET <= '0' when CLOCK_COUNT >= RST_DELAY else '1';
 
 end architecture;
