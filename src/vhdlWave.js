@@ -30,15 +30,6 @@ let outputChannel;
 // The UTF-8 text decoder
 let textDecoder;
 
-const ghwDialogOptions = {
-	canSelectMany: false,
-	openLabel: 'Open',
-	filters: {
-	   'ghw files': ['ghw']
-   }
-};
-
-
 const GHDL    = 'ghdl';
 const GTKWAVE = 'gtkwave';
 
@@ -248,8 +239,8 @@ function ghdlOptions(command, userOptions, filePath, runOptions = []) {
 /**
  * @param {string} filePath
  */
-function analyzeFile(filePath) {
-	const [ dirPath, userOptions, fileName ] = settings.get(filePath, TaskEnum.analyze); //get user specific settings
+async function analyzeFile(filePath) {
+	const [ dirPath, userOptions, fileName, , ] = await settings.get(filePath, TaskEnum.analyze); //get user specific settings
 	executeCommand(GHDL, ghdlOptions('-a', userOptions, fileName), dirPath, fileName + ' analyzed without errors');
 }
 
@@ -262,9 +253,8 @@ function analyzeFile(filePath) {
 /**
  * @param {string} filePath
  */
-function elaborateFiles(filePath) {
-	const [ dirPath, userOptions, fileName, ] = settings.get(filePath, TaskEnum.elaborate); //get user specific settings
-	const unitName = fileName.substring(0, fileName.lastIndexOf("."));
+async function elaborateFiles(filePath) {
+	const [ dirPath, userOptions, fileName, unitName, ] = await settings.get(filePath, TaskEnum.elaborate); //get user specific settings
 	executeCommand(GHDL, ghdlOptions('-e', userOptions, unitName), dirPath, fileName + ' elaborated without errors');
 }
 
@@ -277,22 +267,19 @@ function elaborateFiles(filePath) {
 /**
  * @param {string} filePath
  */
-function runUnit(filePath) {
-	const [ dirPath, userOptions, fileName, runOptions ] = settings.get(filePath, TaskEnum.run); //get user specific settings
-	if (dirPath === null) {
-		// Use execute command to print the error about directory
-		executeCommand('', '', dirPath, '');
+async function runUnit(filePath) {
+	try {
+		const [ dirPath, userOptions, , unitName, runOptions ] = await settings.get(filePath, TaskEnum.run); //get user specific settings
+		if (dirPath === null) {
+			// Use execute command to print the error about directory
+			executeCommand('', '', dirPath, '');
+		}
+		else {
+			executeCommand(GHDL, ghdlOptions('-r', userOptions, unitName, runOptions), dirPath, 'Simulation completed');
+		}
 	}
-	else {
-		const unitName = fileName.substring(0, fileName.lastIndexOf("."));
-		vscode.window.showSaveDialog(ghwDialogOptions).then(fileInfos => {
-			let simFilePath = path.normalize(fileInfos.path);
-			if (simFilePath.charAt(0) == '\\') {
-				simFilePath = simFilePath.substring(1);
-			}
-			runOptions.push('--wave=' +  simFilePath);
-			executeCommand(GHDL, ghdlOptions('-r', userOptions, unitName, runOptions), dirPath, '');
-		});
+	catch (err) {
+		vscode.window.showWarningMessage("Run: " + err);		
 	}
 }
 
@@ -305,8 +292,8 @@ function runUnit(filePath) {
 /**
  * @param {string} filePath
  */
-function cleanGeneratedFiles(filePath) {
-	const [ dirPath,  ,  , ] = settings.get(filePath); 
+async function cleanGeneratedFiles(filePath) {
+	const [ dirPath,  ,  ,  , ] = await settings.get(filePath); 
 	executeCommand(GHDL, [ '--clean' ], dirPath, 'cleaned generated files');
 }
 
@@ -319,8 +306,8 @@ function cleanGeneratedFiles(filePath) {
 /**
  * @param {string} filePath
  */
-function removeGeneratedFiles(filePath) {
-	const [ dirPath,  ,  ,  ] = settings.get(filePath); 
+async function removeGeneratedFiles(filePath) {
+	const [ dirPath,  ,  ,  ] = await settings.get(filePath); 
 	executeCommand(GHDL, [ '--remove' ], dirPath, 'removed generated files');
 }
 

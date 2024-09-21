@@ -29,6 +29,16 @@ const path   = require('path');
 
 const TaskEnum = Object.freeze({"analyze":1, "elaborate":2, "run":3});
 
+const WAVE_EXT = 'ghw';
+
+const ghwDialogOptions = {
+	canSelectMany: false,
+	openLabel: 'Open',
+	filters: {
+	   '${WAVE_EXT} files': [ WAVE_EXT ]
+   }
+};
+
 
 class Settings {
     constructor(vscode) {
@@ -74,10 +84,12 @@ class Settings {
      * @param {string} filePath
      * @param {number} [task]
      */
-    get(filePath, task) {
+    async get(filePath, task) {
         let settingsList;
         let runOptionList;
         let dirPath = this.getWorkspaceDirPath(filePath);
+        const baseName = path.basename(filePath);
+        const unitName = baseName.substring(0, baseName.lastIndexOf("."));
         const workspaceConfig = this.vscode.workspace.getConfiguration(this.getExtensionId());
         const workDir = this.getWorkLibraryPath(workspaceConfig, dirPath);
         if (! Array.isArray(workDir)) {
@@ -124,14 +136,16 @@ class Settings {
                                          this.getSynBinding(workspaceConfig) ,
                                          this.getMbComments(workspaceConfig)
                                         );
-                runOptionList= [].concat(this.getStopTime(workspaceConfig));
+                runOptionList= [].concat(await this.getWaveFile(workspaceConfig, dirPath, unitName) ,
+                                         this.getStopTime(workspaceConfig)
+                                        );
             }
         }
         else {
             //-- Report error with the array containing the missing directory path
             dirPath = workDir;
         }
-        return [ dirPath, settingsList, path.basename(filePath), runOptionList ];
+        return [ dirPath, settingsList, baseName, unitName, runOptionList ];
     }
 
     getExtensionId() {
@@ -178,6 +192,56 @@ class Settings {
             });
         }
         return cmdOption;
+    }
+
+    /**
+     * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     */
+    async getWaveFile(workspaceConfig, dirPath, unitName) {
+        let waveFile = workspaceConfig.get("simulation.WaveFile");
+        if(waveFile != '') {
+            if (! path.isAbsolute(waveFile)) {
+                waveFile = path.join(dirPath, waveFile);
+            }
+            let isDirectory;
+            try {
+                const stats = fs.statSync(waveFile);
+                isDirectory = stats.isDirectory();
+            }
+            catch(err) {
+                switch (waveFile.slice(-1)) {
+                    case '/':
+                    case '\\':
+                        isDirectory = true;
+                    default:
+                        isDirectory = false;
+                }
+            }
+            if (isDirectory) {
+                // Add a filename which has the run module name with extension .ghw
+                waveFile = waveFile + path.sep + unitName.toLowerCase() + '.' + WAVE_EXT;
+            }
+            else {
+                const extPos = waveFile.lastIndexOf(".");
+                if (extPos < waveFile.length - 5) { //-- maximum length of extension: 4 characters
+                    // The name has no extension add '.ghw'
+                    waveFile += '.' + WAVE_EXT;
+                }
+            }
+        }
+        else {
+            const fileInfos = await this.vscode.window.showSaveDialog(ghwDialogOptions);
+            if (fileInfos) {
+                waveFile = path.normalize(fileInfos.path);
+                if (waveFile.charAt(0) == '\\') {
+                    waveFile = waveFile.substring(1);
+                }
+            }
+            else {
+                throw "Command cancelled";
+            }
+        };
+        return [  `--wave=${waveFile}` ];
     }
 
     /**

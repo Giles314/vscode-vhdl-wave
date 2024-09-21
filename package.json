@@ -121,6 +121,33 @@
             "format": "uri",
             "description": "Specifies the directory paths where GHDL searchs for '.cf' library files (not used if left blank)"
           },
+          "vhdl-wave.simulation.WaveFile": {
+            "type": "string",
+            "scope": "resource",
+            "default": "",
+            "description": "Specifies the file or directory to use to store simulation results. When left empty user is requested to pick one. When a directory is specified, a file named as the compiled unit and suffixed '.ghw' will be used. A file name without extension will be suffixed '.ghw'. Relative paths are accepted."
+          },
+          "vhdl-wave.simulation.TimeResolution": {
+            "type": "string",
+            "scope": "resource",
+            "default": "fs",
+            "enum": [
+              "auto",
+              "fs",
+              "ps",
+              "ns",
+              "us",
+              "ms",
+              "sec"
+            ],
+            "description": "Sets the base time resolution for the simulation. It must be the same resolution that GTKWave will use. In case of discrepency GTKWave graphic scale will be wrong."
+          },
+          "vhdl-wave.simulation.StopTime": {
+            "type": "string",
+            "scope": "resource",
+            "default": "1sec",
+            "description": "Sets the maximum duration of the simulation"
+          },
           "vhdl-wave.standard.VHDL": {
             "type": "string",
             "scope": "resource",
@@ -151,27 +178,6 @@
             "scope": "resource",
             "default": false,
             "description": "Tells GHDL to be verbose"
-          },
-          "vhdl-wave.simulation.TimeResolution": {
-            "type": "string",
-            "scope": "resource",
-            "default": "fs",
-            "enum": [
-              "auto",
-              "fs",
-              "ps",
-              "ns",
-              "us",
-              "ms",
-              "sec"
-            ],
-            "description": "Sets the base time resolution for the simulation. It must be the same resolution that GTKWave will use. In case of discrepency GTKWave graphic scale will be wrong."
-          },
-          "vhdl-wave.simulation.StopTime": {
-            "type": "string",
-            "scope": "resource",
-            "default": "1sec",
-            "description": "Sets the maximum duration of the simulation"
           },
           "vhdl-wave.general.RelaxedRules": {
             "type": "boolean",
