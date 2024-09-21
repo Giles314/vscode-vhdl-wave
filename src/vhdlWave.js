@@ -20,14 +20,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-const vscode   = require('vscode');
-const path     = require('path');
-const { exec } = require('child_process');
+const vscode    = require('vscode');
+const path      = require('path');
+const { spawn } = require('child_process');
+
 
 // The channel that will be used to output errors
 let outputChannel;
+// The UTF-8 text decoder
+let textDecoder;
 
-  const ghwDialogOptions = {
+const ghwDialogOptions = {
 	canSelectMany: false,
 	openLabel: 'Open',
 	filters: {
@@ -35,7 +38,12 @@ let outputChannel;
    }
 };
 
+
+const GHDL    = 'ghdl';
+const GTKWAVE = 'gtkwave';
+
 const { Settings, TaskEnum } = require('./settings/Settings');
+const { TextDecoder } = require('util');
   
 const settings = new Settings(vscode)
 
@@ -66,7 +74,9 @@ function getSelectedFilePath(givenUri) {
 function activate(context) {
 
 	if (!outputChannel)
-	outputChannel = vscode.window.createOutputChannel('GHLD Output');
+		outputChannel = vscode.window.createOutputChannel('GHLD Output');
+	if (!textDecoder)
+		textDecoder = new TextDecoder;
 
 	//-- Asynchronous functions to process commands
 	const analyzeAsyncCmd = async (/** @type {any} */ selectedFile) => {
@@ -119,7 +129,12 @@ function activate(context) {
 function deactivate() {
     if (outputChannel) {
         outputChannel.dispose();
+		outputChannel = null;
     }
+	if (textDecoder) {
+		textDecoder.dispose();
+		textDecoder = null;
+	}
 }
 
 module.exports = {
@@ -128,31 +143,11 @@ module.exports = {
 }
 
 
-/*
-**Function: displayCommandResult
-**usage: after invoking a GHDL command, displays the result in asynchronous way
-**parameters: 
-**  - Error code or null when OK
-**  - Command error output
-**  - Success message to display when no error
-**  - Asynchronous highlight errors function to call when not undefined and an error occured
-*/
 /**
- * @param {import("child_process").ExecException} error
- * @param {any} errorOutput
- * @param {string} successMessage
+ * @param {{ buffer: NodeJS.ArrayBufferView | ArrayBuffer; }} data
  */
-function displayCommandResult(error, errorOutput, successMessage) {
-	outputChannel.clear();
-	outputChannel.show();
-
-	if (error) {
-		outputChannel.appendLine(error.message);
-		return;
-	} 
-	else {
-		outputChannel.appendLine(`\nSuccess: ${successMessage}`);
-	}
+function decodeDataToOutputChannel(data) {
+	outputChannel.append(textDecoder.decode(data.buffer));
 }
 
 /*
@@ -169,23 +164,78 @@ function displayCommandResult(error, errorOutput, successMessage) {
  * @param {string} dirPath
  * @param {string} successMessage
  */
-function executeCommand(command, dirPath, successMessage) {
+function executeCommand(command, args, dirPath, successMessage) {
 	if (Array.isArray(dirPath)) {
 		vscode.window.showErrorMessage(`Path of library 'WORK' not found. Create '${dirPath[0]}' or check value in extension settings`);
 	} 
 	else {
-		console.log(command);
+		const executionPromise = new Promise (function(resolve, reject) {
+			console.log(command + ' ' + args.join(' ') );
 
-		const cmdOutputProcessing = async (/** @type {import("child_process").ExecException} */ err, /** @type {any} */ stdout, /** @type {any} */ stderr) => 
-			{ 
-				if (successMessage == '') {
-					successMessage = stderr;
-				}
-				await displayCommandResult(err, stderr, successMessage);
-			};
+			outputChannel.clear();
+			outputChannel.show();
 			
-		exec(command, {cwd: dirPath}, cmdOutputProcessing);
+			let endOfError = false;
+			let endOfOutput = false;
+			let endOfCommand = false;
+			let returnCode;
+
+			const spawnProcess = spawn(command, args, {cwd: dirPath});
+			
+			spawnProcess.stderr.on('data', (receivedData) => {
+				decodeDataToOutputChannel(receivedData);
+			} );
+
+			spawnProcess.stdout.on('data', (receivedData) => {
+				decodeDataToOutputChannel(receivedData);
+			} );
+
+		
+			function checkTermination() {
+				if (endOfError && endOfOutput && endOfCommand) {
+					if (returnCode == 0) {
+						resolve();
+					}
+					else {
+						reject();
+					}
+				}
+			}
+
+			spawnProcess.stderr.on('end', () => { endOfError = true; checkTermination(); } );
+			spawnProcess.stdout.on('end', () => { endOfOutput = true; checkTermination(); } );
+			spawnProcess.on('close', (rc) => { endOfCommand = true; returnCode = rc; checkTermination(); } );
+
+		});
+
+		executionPromise.then(
+			() => { outputChannel.appendLine(`\nSuccess: ${successMessage}`); },
+			() => { }
+		);
 	}
+}
+
+
+/*
+**Function: ghdlOptions
+**usage: invokes ghdl to analyze file from filePath parameter
+**parameter:
+** - The executable command
+** - The command options list
+** - The target filename
+** - The list of run options
+**return value: none
+*/
+/**
+ * @param {string} command
+ * @param {any[]} userOptions
+ * @param {string} filePath
+ * @param {any[]} runOptions
+ */
+function ghdlOptions(command, userOptions, filePath, runOptions = []) {
+	const options = [ command ].concat(userOptions);
+	options.push(filePath);
+	return options.concat(runOptions);
 }
 
 
@@ -200,8 +250,7 @@ function executeCommand(command, dirPath, successMessage) {
  */
 function analyzeFile(filePath) {
 	const [ dirPath, userOptions, fileName ] = settings.get(filePath, TaskEnum.analyze); //get user specific settings
-	const command = 'ghdl -a' + userOptions + ' ' + '"' + filePath + '"'; //command to execute
-	executeCommand(command, dirPath, fileName + ' analyzed without errors');
+	executeCommand(GHDL, ghdlOptions('-a', userOptions, fileName), dirPath, fileName + ' analyzed without errors');
 }
 
 /*
@@ -216,8 +265,7 @@ function analyzeFile(filePath) {
 function elaborateFiles(filePath) {
 	const [ dirPath, userOptions, fileName, ] = settings.get(filePath, TaskEnum.elaborate); //get user specific settings
 	const unitName = fileName.substring(0, fileName.lastIndexOf("."));
-	const command = 'ghdl -e' + userOptions + ' ' + unitName; //command to execute (elaborate vhdl file)
-	executeCommand(command, dirPath, fileName + ' elaborated without errors');
+	executeCommand(GHDL, ghdlOptions('-e', userOptions, unitName), dirPath, fileName + ' elaborated without errors');
 }
 
 /*
@@ -233,7 +281,7 @@ function runUnit(filePath) {
 	const [ dirPath, userOptions, fileName, runOptions ] = settings.get(filePath, TaskEnum.run); //get user specific settings
 	if (dirPath === null) {
 		// Use execute command to print the error about directory
-		executeCommand('', dirPath, '');
+		executeCommand('', '', dirPath, '');
 	}
 	else {
 		const unitName = fileName.substring(0, fileName.lastIndexOf("."));
@@ -242,8 +290,8 @@ function runUnit(filePath) {
 			if (simFilePath.charAt(0) == '\\') {
 				simFilePath = simFilePath.substring(1);
 			}
-			const command = 'ghdl -r' + userOptions + ' ' + unitName + ' ' + '--wave=' + '"' + simFilePath + '"' + runOptions + ' >&2'; //command to execute (run unit)
-			executeCommand(command, dirPath, '');
+			runOptions.push('--wave=' +  simFilePath);
+			executeCommand(GHDL, ghdlOptions('-r', userOptions, unitName, runOptions), dirPath, '');
 		});
 	}
 }
@@ -259,8 +307,7 @@ function runUnit(filePath) {
  */
 function cleanGeneratedFiles(filePath) {
 	const [ dirPath,  ,  , ] = settings.get(filePath); 
-	const command = 'ghdl --clean'; //command to execute (clean generated files)
-	executeCommand(command, dirPath, 'cleaned generated files');
+	executeCommand(GHDL, [ '--clean' ], dirPath, 'cleaned generated files');
 }
 
 /*
@@ -269,10 +316,12 @@ function cleanGeneratedFiles(filePath) {
 **parameter: none
 **return value(s): none
  */
+/**
+ * @param {string} filePath
+ */
 function removeGeneratedFiles(filePath) {
 	const [ dirPath,  ,  ,  ] = settings.get(filePath); 
-	const command = 'ghdl --remove'; //command to execute (remove generated files)
-	executeCommand(command, dirPath, 'removed generated files');
+	executeCommand(GHDL, [ '--remove' ], dirPath, 'removed generated files');
 }
 
 /*
@@ -285,13 +334,6 @@ function removeGeneratedFiles(filePath) {
  * @param {string} filePath
  */
 function invokeGtkwave(filePath) {
-	const command = 'gtkwave ' + '"' + filePath + '"'; //command to execute (gtkwave)
-	console.log(command);
-	exec(command, async (err, stdout, stderr) => { 
-  		if (err) {
-			vscode.window.showErrorMessage(stderr);
-    		return;
-  		}
-	});
+	executeCommand(GTKWAVE, [ filePath ], '.', 'GTKWave completed');
 }
 

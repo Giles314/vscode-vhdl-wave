@@ -75,60 +75,63 @@ class Settings {
      * @param {number} [task]
      */
     get(filePath, task) {
-        let settingsString = "";
-        let runOptions = "";
+        let settingsList;
+        let runOptionList;
         let dirPath = this.getWorkspaceDirPath(filePath);
         const workspaceConfig = this.vscode.workspace.getConfiguration(this.getExtensionId());
         const workDir = this.getWorkLibraryPath(workspaceConfig, dirPath);
         if (! Array.isArray(workDir)) {
             if(task == TaskEnum.analyze) {
-                settingsString =    this.getWorkDirectoryName(workspaceConfig) +
-                                    this.getWorkLibraryOption(workDir) +
-                                    this.getLibraryDirectory(workspaceConfig) +
-                                    this.getVhdlStandard(workspaceConfig) +
-                                    this.getIeeeVersion(workspaceConfig) +
-                                    this.getVerbose(workspaceConfig) +
-                                    this.getRelaxedRules(workspaceConfig) +
-                                    this.getVitalChecks(workspaceConfig) +
-                                    this.getPsl(workspaceConfig) +
-                                    this.getExplicit(workspaceConfig) +
-                                    this.getSynBinding(workspaceConfig) +
-                                    this.getMbComments(workspaceConfig)
+                settingsList = [].concat(this.getWorkDirectoryName(workspaceConfig),
+                                         this.getWorkLibraryOption(workDir) ,
+                                         this.getLibraryDirectory(workspaceConfig) ,
+                                         this.getVhdlStandard(workspaceConfig) ,
+                                         this.getIeeeVersion(workspaceConfig) ,
+                                         this.getVerbose(workspaceConfig) ,
+                                         this.getRelaxedRules(workspaceConfig) ,
+                                         this.getVitalChecks(workspaceConfig) ,
+                                         this.getPsl(workspaceConfig) ,
+                                         this.getExplicit(workspaceConfig) ,
+                                         this.getSynBinding(workspaceConfig) ,
+                                         this.getMbComments(workspaceConfig) 
+                                        );
             } else if(task == TaskEnum.elaborate) {
-                settingsString =    this.getWorkDirectoryName(workspaceConfig) +
-                                    this.getWorkLibraryOption(workDir) +
-                                    this.getLibraryDirectory(workspaceConfig) +
-                                    this.getVhdlStandard(workspaceConfig) + 
-                                    this.getIeeeVersion(workspaceConfig) +
-                                    this.getVerbose(workspaceConfig) +
-                                    this.getRelaxedRules(workspaceConfig) + 
-                                    this.getVitalChecks(workspaceConfig) +
-                                    this.getPsl(workspaceConfig) +
-                                    this.getExplicit(workspaceConfig) +
-                                    this.getSynBinding(workspaceConfig) +
-                                    this.getMbComments(workspaceConfig)
+                settingsList = [].concat(this.getWorkDirectoryName(workspaceConfig) ,
+                                         this.getWorkLibraryOption(workDir) ,
+                                         this.getLibraryDirectory(workspaceConfig) ,
+                                         this.getVhdlStandard(workspaceConfig) , 
+                                         this.getIeeeVersion(workspaceConfig) ,
+                                         this.getVerbose(workspaceConfig) ,
+                                         this.getRelaxedRules(workspaceConfig) , 
+                                         this.getVitalChecks(workspaceConfig) ,
+                                         this.getPsl(workspaceConfig) ,
+                                         this.getExplicit(workspaceConfig) ,
+                                         this.getSynBinding(workspaceConfig) ,
+                                         this.getMbComments(workspaceConfig)
+                                        );
             } else if(task == TaskEnum.run) {
-                settingsString =    this.getWorkDirectoryName(workspaceConfig) + 
-                                    this.getWorkLibraryOption(workDir) +
-                                    this.getLibraryDirectory(workspaceConfig) +
-                                    this.getVhdlStandard(workspaceConfig) + 
-                                    this.getIeeeVersion(workspaceConfig) +
-                                    this.getVerbose(workspaceConfig) +
-                                    this.getTimeResolution(workspaceConfig) +
-                                    this.getRelaxedRules(workspaceConfig) +
-                                    this.getVitalChecks(workspaceConfig) +
-                                    this.getPsl(workspaceConfig) +
-                                    this.getExplicit(workspaceConfig) +
-                                    this.getSynBinding(workspaceConfig) +
-                                    this.getMbComments(workspaceConfig)
-                runOptions = this.getStopTime(workspaceConfig);
+                settingsList = [].concat(this.getWorkDirectoryName(workspaceConfig) , 
+                                         this.getWorkLibraryOption(workDir) ,
+                                         this.getLibraryDirectory(workspaceConfig) ,
+                                         this.getVhdlStandard(workspaceConfig) , 
+                                         this.getIeeeVersion(workspaceConfig) ,
+                                         this.getVerbose(workspaceConfig) ,
+                                         this.getTimeResolution(workspaceConfig) ,
+                                         this.getRelaxedRules(workspaceConfig) ,
+                                         this.getVitalChecks(workspaceConfig) ,
+                                         this.getPsl(workspaceConfig) ,
+                                         this.getExplicit(workspaceConfig) ,
+                                         this.getSynBinding(workspaceConfig) ,
+                                         this.getMbComments(workspaceConfig)
+                                        );
+                runOptionList= [].concat(this.getStopTime(workspaceConfig));
             }
         }
         else {
             //-- Report error with the array containing the missing directory path
             dirPath = workDir;
         }
-        return [ dirPath, settingsString, path.basename(filePath), runOptions ];
+        return [ dirPath, settingsList, path.basename(filePath), runOptionList ];
     }
 
     getExtensionId() {
@@ -141,9 +144,9 @@ class Settings {
     getWorkDirectoryName(workspaceConfig) {
         const libName = workspaceConfig.get("library.WorkLibraryName")
         if((libName != "") && (libName != null)) {
-            return " --work=" + libName
+            return [ `--work=${libName}` ];
         } else {
-            return ""
+            return [];
         }
     }
 
@@ -152,10 +155,10 @@ class Settings {
      */
     getWorkLibraryOption(workDir) {
         if(workDir == "") {
-            return ""
+            return [];
         } 
         else {
-            return " --workdir=" + workDir;
+            return [ `--workdir=${workDir}` ];
         }
     }
 
@@ -163,14 +166,14 @@ class Settings {
      * @param {{ get: (arg0: string) => any; }} workspaceConfig
      */
     getLibraryDirectory(workspaceConfig) {
-        let cmdOption = "";
-        const libPathArr = workspaceConfig.get("library.LibraryDirectories")
+        let cmdOption = [];
+        const libPathArr = workspaceConfig.get("library.LibraryDirectories");
         if (libPathArr != '') {
             libPathArr.forEach(libPath => {
                 if(fs.existsSync(libPath)) {
-                    cmdOption = cmdOption + " " + "-P" + '"' + libPath + '"'
+                    cmdOption = cmdOption.concat([ `-P"${libPath}"` ]);
                 } else {
-                    this.vscode.window.showInformationMessage(`Specified path of external library '${libPath}' not found, ignoring argument. Check value in extension settings`)
+                    this.vscode.window.showInformationMessage(`Specified path of external library '${libPath}' not found, ignoring argument. Check value in extension settings`);
                 }
             });
         }
@@ -181,27 +184,27 @@ class Settings {
      * @param {{ get: (arg0: string) => any; }} workspaceConfig
      */
     getVhdlStandard(workspaceConfig) {
-        const vhdlStd = workspaceConfig.get("standard.VHDL")
-        const cmdOption = " --std=" + vhdlStd
-        return cmdOption
+        const vhdlStd = workspaceConfig.get("standard.VHDL");
+        const cmdOption = `--std=${vhdlStd}`;
+        return cmdOption;
     }
 
     /**
      * @param {{ get: (arg0: string) => any; }} workspaceConfig
      */
     getIeeeVersion(workspaceConfig) {
-        const ieeVer = workspaceConfig.get("standard.IEEE")
-        let cmdOption = "";
+        const ieeVer = workspaceConfig.get("standard.IEEE");
+        let cmdOption = [];
         switch(ieeVer) {
             case "standard" :
-                cmdOption = " --ieee=" + ieeVer;
+                cmdOption.push(`--ieee=${ieeVer}`);
                 break;
             case "none" :
                 break;
             default:
-                cmdOption = " -fsynopsys";
+                cmdOption.push("-fsynopsys");
         }
-        return cmdOption
+        return cmdOption;
     }
 
     /**
@@ -209,9 +212,9 @@ class Settings {
      */
     getVerbose(workspaceConfig) {
         if(workspaceConfig.get("general.verbose")) {
-            return " -v"
+            return [ "-v" ];
         } else {
-            return ""
+            return [];
         }
     }
 
@@ -220,7 +223,7 @@ class Settings {
      */
     getTimeResolution(workspaceConfig) {
         const timeRes = workspaceConfig.get("simulation.TimeResolution")
-        const cmdOption = " --time-resolution=" + timeRes
+        const cmdOption = [ `--time-resolution=${timeRes}` ]; 
         return cmdOption
     }
 
@@ -230,9 +233,9 @@ class Settings {
     getStopTime(workspaceConfig) {
         let stopTime = workspaceConfig.get("simulation.StopTime");
         if(stopTime == '') {
-            stopTime = '1sec'
+            stopTime = '1sec';
         }
-        return ` --stop-time=${stopTime}`;
+        return [ `--stop-time=${stopTime}` ];
     }
 
     /**
@@ -240,9 +243,9 @@ class Settings {
      */
     getRelaxedRules(workspaceConfig) {
         if(workspaceConfig.get("general.RelaxedRules")) {
-            return " -frelaxed-rules"
+            return [ "-frelaxed-rules" ];
         } else {
-            return ""
+            return [];
         }
     }
 
@@ -251,9 +254,9 @@ class Settings {
      */
     getVitalChecks(workspaceConfig) {
         if(workspaceConfig.get("general.vitalChecks")) {
-            return ""
+            return [];
         } else {
-            return " --no-vital-checks"
+            return [ "--no-vital-checks" ];
         }
     }
 
@@ -262,9 +265,9 @@ class Settings {
      */
     getPsl(workspaceConfig) {
         if(workspaceConfig.get("general.PSL")) {
-            return " -fpsl"
+            return [ "-fpsl" ];
         } else {
-            return ""
+            return [];
         }
     }
 
@@ -273,9 +276,9 @@ class Settings {
      */
     getExplicit(workspaceConfig) {
         if(workspaceConfig.get("general.explicit")) {
-            return " -fexplicit"
+            return [ "-fexplicit" ];
         } else {
-            return ""
+            return [];
         }
     }
 
@@ -284,9 +287,9 @@ class Settings {
      */
     getSynBinding(workspaceConfig) {
         if(workspaceConfig.get("general.synBinding")) {
-            return " --syn-binding"
+            return [ "--syn-binding" ];
         } else {
-            return ""
+            return [];
         }
     }
 
@@ -295,9 +298,9 @@ class Settings {
      */
     getMbComments(workspaceConfig) {
         if(workspaceConfig.get("general.mbComments")) {
-            return " --mb-comments"
+            return [ "--mb-comments" ];
         } else {
-            return ""
+            return [];
         }
     }
 }
