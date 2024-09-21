@@ -63,6 +63,10 @@
         "title": "Run unit"
       },
       {
+        "command": "extension.editor_ghdl-make_unit",
+        "title": "Make unit"
+      },
+      {
         "command": "extension.editor_ghdl-clean",
         "title": "Clean"
       },
@@ -81,6 +85,10 @@
       {
         "command": "extension.explorer_ghdl-run_unit",
         "title": "Run unit"
+      },
+      {
+        "command": "extension.explorer_ghdl-make_unit",
+        "title": "Make unit"
       },
       {
         "command": "extension.explorer_ghdl-clean",
@@ -248,6 +256,9 @@
           "command": "extension.editor_ghdl-run_unit"
         },
         {
+          "command": "extension.editor_ghdl-make_unit"
+        },
+        {
           "command": "extension.editor_ghdl-clean"
         },
         {
@@ -281,6 +292,10 @@
           "group": "7_modification@5"
         },
         {
+          "command": "extension.explorer_ghdl-make_unit",
+          "group": "7_modification@5"
+        },
+        {
           "command": "extension.explorer_ghdl-clean",
           "group": "7_modification@6"
         },
@@ -308,6 +323,12 @@
         "key": "ctrl+alt+r",
         "mac": "shift+cmd+r",
         "linux": "shift+alt+r"
+      },
+      {
+        "command": "extension.editor_ghdl-make_unit",
+        "key": "ctrl+alt+m",
+        "mac": "shift+cmd+m",
+        "linux": "shift+alt+m"
       },
       {
         "command": "extension.editor_ghdl-clean",

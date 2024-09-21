@@ -17,8 +17,9 @@ At present it is possible to invoke the following GHDL functions by either right
 | ghdl analyze   | `ghdl -a [File]`               |
 | ghdl elaborate | `ghdl -e [Unit]`               |
 | ghdl run       | `ghdl -r [Unit] [export file]` |
+| ghdl make      | `ghdl -m [unit]` (+ run if OK) |
 | ghdl clear     | `ghdl -c`                      |
-| ghdl remove    | `ghdl -r`                      |
+| ghdl remove    | `ghdl --remove`                |
 
 In addition to that the GHDL analyze function offers you error highlighting in the editor. 
 
@@ -34,6 +35,7 @@ It is also possible to invoke the GHDL functions via the following keybindings.
 | ghdl analyze   | `ctrl + alt + a` | `shift + alt + a` | `shift + cmd + a` |
 | ghdl elaborate | `ctrl + alt + l` | `shift + alt + e` | `shift + cmd + e` |
 | ghdl run       | `ctrl + alt + r` | `shift + alt + r` | `shift + cmd + r` |
+| ghdl make      | `ctrl + alt + m` | `shift + alt + m` | `shift + cmd + m` |
 | ghdl clear     | `ctrl + alt + c` | `shift + alt + c` | `shift + cmd + c` |
 | ghdl remove    | `ctrl + alt + d` | `shift + alt + d` | `shift + cmd + d` |
 

@@ -195,7 +195,9 @@ class Settings {
     }
 
     /**
-     * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     * @param {{get: (arg0: string) => any;}} workspaceConfig
+     * @param {string} dirPath
+     * @param {string} unitName
      */
     async getWaveFile(workspaceConfig, dirPath, unitName) {
         let waveFile = workspaceConfig.get("simulation.WaveFile");

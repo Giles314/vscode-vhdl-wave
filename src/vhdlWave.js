@@ -76,6 +76,11 @@ function activate(context) {
 	}
 	const elabAsyncCmd   = async (/** @type {any} */ selectedFile) => { elaborateFiles(getSelectedFilePath(selectedFile)); }
 	const runAsyncCmd    = async (/** @type {any} */ selectedFile) => { runUnit(getSelectedFilePath(selectedFile)); }
+
+	const makeAsyncCmd = async (/** @type {any} */ selectedFile) => {
+		await vscode.window.activeTextEditor.document.save(); //save open file before analyzing it
+		makeUnit(getSelectedFilePath(selectedFile)); 
+	}
 	const cleanAsynCmd   = async (/** @type {any} */ selectedFile) => { cleanGeneratedFiles(getSelectedFilePath(selectedFile)); }
 	const removeAsynCmd  = async (/** @type {any} */ selectedFile) => { removeGeneratedFiles(getSelectedFilePath(selectedFile)); }
 	const waveAsynCmd    = async (/** @type {{ fsPath: string; }} */ selectedFile) => { invokeGtkwave(selectedFile.fsPath); }
@@ -97,6 +102,12 @@ function activate(context) {
 
 	context.subscriptions.push(disposableEditorRunUnit);
 	context.subscriptions.push(disposableExplorerRunUnit); 
+	
+	let disposableEditorMakeUnit = vscode.commands.registerCommand('extension.editor_ghdl-make_unit', makeAsyncCmd);
+	let disposableExplorerMakeUnit = vscode.commands.registerCommand('extension.explorer_ghdl-make_unit', makeAsyncCmd);
+
+	context.subscriptions.push(disposableEditorMakeUnit);
+	context.subscriptions.push(disposableExplorerMakeUnit); 
 	
 	let disposableEditorClean = vscode.commands.registerCommand('extension.editor_ghdl-clean', cleanAsynCmd);
 	let disposableExplorerClean = vscode.commands.registerCommand('extension.explorer_ghdl-clean', cleanAsynCmd);
@@ -155,7 +166,8 @@ function decodeDataToOutputChannel(data) {
  * @param {string} dirPath
  * @param {string} successMessage
  */
-function executeCommand(command, args, dirPath, successMessage) {
+async function executeCommand(command, args, dirPath, successMessage, continueLog = false) {
+	let result = false;
 	if (Array.isArray(dirPath)) {
 		vscode.window.showErrorMessage(`Path of library 'WORK' not found. Create '${dirPath[0]}' or check value in extension settings`);
 	} 
@@ -163,8 +175,10 @@ function executeCommand(command, args, dirPath, successMessage) {
 		const executionPromise = new Promise (function(resolve, reject) {
 			console.log(command + ' ' + args.join(' ') );
 
-			outputChannel.clear();
-			outputChannel.show();
+			if (! continueLog) {
+				outputChannel.clear();
+				outputChannel.show();
+			}
 			
 			let endOfError = false;
 			let endOfOutput = false;
@@ -199,11 +213,12 @@ function executeCommand(command, args, dirPath, successMessage) {
 
 		});
 
-		executionPromise.then(
-			() => { outputChannel.appendLine(`\nSuccess: ${successMessage}`); },
+		await executionPromise.then(
+			() => { outputChannel.appendLine(`\nSuccess: ${successMessage}`); result = true; },
 			() => { }
 		);
 	}
+	return result;
 }
 
 
@@ -276,6 +291,33 @@ async function runUnit(filePath) {
 		}
 		else {
 			executeCommand(GHDL, ghdlOptions('-r', userOptions, unitName, runOptions), dirPath, 'Simulation completed');
+		}
+	}
+	catch (err) {
+		vscode.window.showWarningMessage("Run: " + err);		
+	}
+}
+
+/*
+**Function: makeUnit
+**usage: make the testbench unit and exports to ghw file 
+**parameter: path of the file that was analyzed
+**return value(s): none
+*/
+/**
+ * @param {string} filePath
+ */
+async function makeUnit(filePath) {
+	try {
+		const [ dirPath, userOptions, , unitName, runOptions ] = await settings.get(filePath, TaskEnum.run); //get user specific settings
+		if (dirPath === null) {
+			// Use execute command to print the error about directory
+			executeCommand('', '', dirPath, '');
+		}
+		else {
+			if (await executeCommand(GHDL, ghdlOptions('-m', userOptions, unitName), dirPath, 'Make completed. Running simulation...')) {
+				executeCommand(GHDL, ghdlOptions('-r', userOptions, unitName, runOptions), dirPath, 'Simulation completed', /*continueLog*/true);
+			}
 		}
 	}
 	catch (err) {
