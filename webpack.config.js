@@ -13,18 +13,20 @@ const config = {
             {
                 test: /\.(eot|svg|ttf|woff|woff2|png|jpg|gif)$/i,
                 type: 'asset',
+                exclude: [ path.resolve(__dirname, 'demo'), ] , 
             },
 
             // Add your rules for custom modules here
             // Learn more about loaders from https://webpack.js.org/loaders/
         ],
     },
-     resolve: { 
+    resolve: { 
         fallback: {
             'path'   : false,
             'fs'     : false,
             'vscode' : false,
             'child_process' : false,
+            'util'   : false,
         },
     },
 };

@@ -8,3 +8,4 @@ vsc-extension-quickstart.md
 **/.eslintrc.json
 webpack.config.js
 esbuild.js
+demo
