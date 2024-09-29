@@ -256,7 +256,7 @@ function ghdlOptions(command, userOptions, filePath, runOptions = []) {
  */
 async function analyzeFile(filePath) {
 	const [ dirPath, userOptions, fileName, , ] = await settings.get(filePath, TaskEnum.analyze); //get user specific settings
-	executeCommand(GHDL, ghdlOptions('-a', userOptions, fileName), dirPath, fileName + ' analyzed without errors');
+	executeCommand(GHDL, ghdlOptions('-a', userOptions, filePath), dirPath, fileName + ' analyzed without errors');
 }
 
 /*
