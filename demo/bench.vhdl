@@ -45,8 +45,8 @@ begin
 	begin
 		wait for 50 ns;
 		CLOCK <= not CLOCK;
-		if CLOCK_COUNT mod 20000 = 0 then
-			LOG_LOOP(CLOCK_COUNT);
+		if CLOCK_COUNT mod 2000 = 0 then
+			LOG_LOOP(CLOCK_COUNT/20);
 		end if;
 		CLOCK_COUNT <= CLOCK_COUNT + 1;
 	end process;
