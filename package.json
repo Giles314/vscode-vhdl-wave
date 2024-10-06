@@ -3,7 +3,7 @@
 	"displayName": "VHDL-Wave",
 	"description": "VSCode extension for VHDL simulation with GHDL and GTKWave",
 	"publisher": "Giles314",
-  "version": "1.2.2",
+  "version": "1.3.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/Giles314/vscode-vhdl-wave"
@@ -35,17 +35,7 @@
     "GTKWave"
   ],
   "activationEvents": [
-    "onCommand:extension.editor_ghdl-analyze_file",
-    "onCommand:extension.editor_ghdl-elaborate_file",
-    "onCommand:extension.editor_ghdl-run_unit",
-    "onCommand:extension.editor_ghdl-clean",
-    "onCommand:extension.editor_ghdl-remove",
-    "onCommand:extension.explorer_ghdl-analyze_file",
-    "onCommand:extension.explorer_ghdl-elaborate_file",
-    "onCommand:extension.explorer_ghdl-run_unit",
-    "onCommand:extension.explorer_ghdl-clean",
-    "onCommand:extension.explorer_ghdl-remove",
-    "onCommand:extension.explorer_gtkwave"
+    "onStartupFinished"
   ],
   "main": "./src/vhdlWave.js",
   "contributes": {
@@ -197,7 +187,7 @@
             "type": "boolean",
             "scope": "resource",
             "default": true,
-            "description": "Enable chacksof restriction on VITAL units"
+            "description": "Enable checks of restriction on VITAL units"
           },
           "vhdl-wave.general.PSL": {
             "type": "boolean",
@@ -222,6 +212,12 @@
             "scope": "resource",
             "default": false,
             "description": "Allow UTF8 or multi-bytes chars in a comment"
+          },
+          "vhdl-wave.general.enableLsToml": {
+            "type": "boolean",
+            "scope": "resource",
+            "default": true,
+            "description": "Allow generation of the vhdl-ls.toml file in the root directory of the workspace folder for use by extension VHDL-LS"
           }
         }
       }
@@ -342,7 +338,16 @@
         "mac": "shift+cmd+d",
         "linux": "shift+alt+d"
       }
-    ]
+    ],
+		"languages": [
+			{
+				"id": "vhdl",
+				"extensions": [
+					".vhd",
+					".vhdl"
+				]
+			}
+		]
   },
   "scripts": {
     "lint": "eslint .",

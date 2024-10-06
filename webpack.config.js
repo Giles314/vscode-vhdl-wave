@@ -27,6 +27,7 @@ const config = {
             'vscode' : false,
             'child_process' : false,
             'util'   : false,
+            'os'     : false,
         },
     },
 };

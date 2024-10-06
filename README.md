@@ -9,7 +9,8 @@ You will need to have [GHDL](https://github.com/ghdl/ghdl/releases) and [GTKWave
 
 ## Usage
 
-**GHDL**
+### GHDL
+
 At present it is possible to invoke the following GHDL functions by either rightclicking at the editor or at the explorer on the specific file and then selecting the desired funtion.
 
 | Editor Option  | GHDL Function                  |
@@ -21,10 +22,18 @@ At present it is possible to invoke the following GHDL functions by either right
 | ghdl clear     | `ghdl -c`                      |
 | ghdl remove    | `ghdl --remove`                |
 
-In addition to that the GHDL analyze function offers you error highlighting in the editor. 
+In addition to that the GHDL analyze function offers you error highlighting in the editor.
 
-**GTKWave**
+### GTKWave
+
 To open your simulation files with GTKWave, simply rightclick on them (.ghw or .vcd file required) in the explorer and then select `gtkwave`
+
+## VHDL-LS _(new in V1.3.0)_
+
+VHDL-Wave recommends VHDL-LS for syntax, and syntax error highlighting. VHDL-Wave automatically generates the configuration file that VHDL-LS needs to
+find all references. This feature can be disabled in setting (see `vhdl-wave > General: Enable Ls Toml`).
+
+It is still possible to complement the generated `vhdl-ls.toml` file with additional data. This must be done below the limit indicated in the file.
 
 ## Keybindings
 

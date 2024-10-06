@@ -9,3 +9,4 @@ vsc-extension-quickstart.md
 webpack.config.js
 esbuild.js
 demo
+testlib
