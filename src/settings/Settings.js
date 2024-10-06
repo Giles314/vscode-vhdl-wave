@@ -1,7 +1,6 @@
 // MIT License
 
-//const { settings } = require('cluster');
-
+// Copyright (c) 2024 Philippe Chevrier
 // Copyright (c) 2020 Johannes Bonk
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -53,7 +52,12 @@ class Settings {
         let dirPath;
         const Folders = this.vscode.workspace.workspaceFolders;
         if (Folders == undefined) {
-            dirPath = path.dirname(filePath); // When no workspace folder is defined use the file folder
+            if (filePath) {
+                dirPath = path.dirname(filePath); // When no workspace folder is defined use the file folder
+            }
+            else {
+                dirPath = '';
+            }
         } else {
             dirPath = Folders[0].uri.fsPath;  // Get path of workspace root directory where the ghdl command must be run by default
         }
@@ -64,8 +68,11 @@ class Settings {
      * @param {{ get: (arg0: string) => any; }} workspaceConfig
      * @param {string} dirPath
      */
-    getWorkLibraryPath(workspaceConfig, dirPath) {
-        let libPath = workspaceConfig.get("library.WorkLibraryPath")
+    getWorkLibraryPath(workspaceConfig, overrideData, dirPath) {
+        let libPath = overrideData['WorkLibraryPath'];
+        if (!libPath) {
+            libPath = workspaceConfig.get("library.WorkLibraryPath");
+        }
         if((libPath == "") || (libPath == null)) {
             libPath = ""
         } else {
@@ -73,12 +80,34 @@ class Settings {
                 libPath = path.join(dirPath, libPath);
             }
             if(! fs.existsSync(libPath)) {
-                // Include the path inside a library to indicate it does not exists
+                // Include the path inside a list to indicate it does not exists
                 libPath = [ libPath ];
             }
         }
         return libPath;
     }
+    
+
+    getExtensionId() {
+        return "vhdl-wave"; 
+    }
+
+
+    getWorkSpaceConfig() {
+        return this.vscode.workspace.getConfiguration(this.getExtensionId());
+    }
+
+
+    getWorkSpaceOverride(dirPath) {
+        let result = {};
+        const overrideFilePath = path.join(dirPath, '.vscode', 'vhdl-wave.json');
+        if(fs.existsSync(overrideFilePath)) {
+            const data = fs.readFileSync(overrideFilePath, { encoding: 'utf8',} );
+            result = JSON.parse(data);
+        }
+        return result;
+    }
+
 
     /**
      * @param {string} filePath
@@ -90,13 +119,14 @@ class Settings {
         let dirPath = this.getWorkspaceDirPath(filePath);
         const baseName = path.basename(filePath);
         const unitName = baseName.substring(0, baseName.lastIndexOf("."));
-        const workspaceConfig = this.vscode.workspace.getConfiguration(this.getExtensionId());
-        const workDir = this.getWorkLibraryPath(workspaceConfig, dirPath);
+        const workspaceConfig = this.getWorkSpaceConfig();
+        const overrideData = this.getWorkSpaceOverride(dirPath);
+        const workDir = this.getWorkLibraryPath(workspaceConfig, overrideData, dirPath);
         if (! Array.isArray(workDir)) {
             if(task == TaskEnum.analyze) {
-                settingsList = [].concat(this.getWorkDirectoryName(workspaceConfig),
+                settingsList = [].concat(this.getWorkDirectoryName(workspaceConfig, overrideData),
                                          this.getWorkLibraryOption(workDir) ,
-                                         this.getLibraryDirectory(workspaceConfig) ,
+                                         this.getLibraryDirectories(workspaceConfig) ,
                                          this.getVhdlStandard(workspaceConfig) ,
                                          this.getIeeeVersion(workspaceConfig) ,
                                          this.getVerbose(workspaceConfig) ,
@@ -108,9 +138,9 @@ class Settings {
                                          this.getMbComments(workspaceConfig) 
                                         );
             } else if(task == TaskEnum.elaborate) {
-                settingsList = [].concat(this.getWorkDirectoryName(workspaceConfig) ,
+                settingsList = [].concat(this.getWorkDirectoryName(workspaceConfig, overrideData) ,
                                          this.getWorkLibraryOption(workDir) ,
-                                         this.getLibraryDirectory(workspaceConfig) ,
+                                         this.getLibraryDirectories(workspaceConfig) ,
                                          this.getVhdlStandard(workspaceConfig) , 
                                          this.getIeeeVersion(workspaceConfig) ,
                                          this.getVerbose(workspaceConfig) ,
@@ -122,9 +152,9 @@ class Settings {
                                          this.getMbComments(workspaceConfig)
                                         );
             } else if(task == TaskEnum.run) {
-                settingsList = [].concat(this.getWorkDirectoryName(workspaceConfig) , 
+                settingsList = [].concat(this.getWorkDirectoryName(workspaceConfig, overrideData) , 
                                          this.getWorkLibraryOption(workDir) ,
-                                         this.getLibraryDirectory(workspaceConfig) ,
+                                         this.getLibraryDirectories(workspaceConfig) ,
                                          this.getVhdlStandard(workspaceConfig) , 
                                          this.getIeeeVersion(workspaceConfig) ,
                                          this.getVerbose(workspaceConfig) ,
@@ -148,15 +178,15 @@ class Settings {
         return [ dirPath, settingsList, baseName, unitName, runOptionList ];
     }
 
-    getExtensionId() {
-        return "vhdl-wave"; 
-    }
-
     /**
-     * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     * @param {{get: (arg0: string) => any;}} workspaceConfig
+     * @param {{ [x: string]: any; }} overrideData
      */
-    getWorkDirectoryName(workspaceConfig) {
-        const libName = workspaceConfig.get("library.WorkLibraryName")
+    getWorkDirectoryName(workspaceConfig, overrideData) {
+        let libName = overrideData['WorkLibraryName'];
+        if (!libName) {
+            libName = workspaceConfig.get('library.WorkLibraryName')
+        }
         if((libName != "") && (libName != null)) {
             return [ `--work=${libName}` ];
         } else {
@@ -177,9 +207,9 @@ class Settings {
     }
 
     /**
-     * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     * @param {{get: (arg0: string) => any;}} workspaceConfig
      */
-    getLibraryDirectory(workspaceConfig) {
+    getLibraryDirectories(workspaceConfig) {
         let cmdOption = [];
         const libPathArr = workspaceConfig.get("library.LibraryDirectories");
         if (libPathArr != '') {
@@ -234,10 +264,7 @@ class Settings {
         else {
             const fileInfos = await this.vscode.window.showSaveDialog(ghwDialogOptions);
             if (fileInfos) {
-                waveFile = path.normalize(fileInfos.path);
-                if (waveFile.charAt(0) == '\\') {
-                    waveFile = waveFile.substring(1);
-                }
+                waveFile = path.normalize(fileInfos.fsPath);
             }
             else {
                 throw "Command cancelled";
@@ -369,6 +396,6 @@ class Settings {
             return [];
         }
     }
-}
+    }
 
 module.exports = { Settings, TaskEnum };
