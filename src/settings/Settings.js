@@ -185,7 +185,7 @@ class Settings {
         if (libPathArr != '') {
             libPathArr.forEach(libPath => {
                 if(fs.existsSync(libPath)) {
-                    cmdOption = cmdOption.concat([ `-P"${libPath}"` ]);
+                    cmdOption = cmdOption.concat([ `-P${libPath}` ]);
                 } else {
                     this.vscode.window.showInformationMessage(`Specified path of external library '${libPath}' not found, ignoring argument. Check value in extension settings`);
                 }
