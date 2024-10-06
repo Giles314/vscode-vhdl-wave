@@ -21,7 +21,7 @@
 -- SOFTWARE.
 
 library basic_comp;
-use basic_comp.all;
+use basic_comp.counter;
 
 library ieee;
 use ieee.std_logic_1164.all;

@@ -39,6 +39,18 @@ It is also possible to invoke the GHDL functions via the following keybindings.
 | ghdl clear     | `ctrl + alt + c` | `shift + alt + c` | `shift + cmd + c` |
 | ghdl remove    | `ctrl + alt + d` | `shift + alt + d` | `shift + cmd + d` |
 
+## VHDL-LS _(new in V1.3.0)_
+
+VHDL-Wave recommends VHDL-LS for syntax highlighting. VHDL-Wave automatically generates the configuration file that VHDL-LS needs to
+find all references. This feature can be disabled in setting (see `vhdl-wave > General: Enable Ls Toml`).
+
+It is still possible to complement the generated `vhdl-ls.toml` file with additional data. This must be done below the limit indicated in the file.
+
+When a library is added to the configuration (setting `Library Directories`) this directory is searched for files following library naming rule:
+
+`<library-name>_obj<vhdl-version>.cf`
+
+These library files are then parsed to find the corresponding source files which are then added to `vhdl-ls.toml` file.
 
 ## `vhdl-wave` file _(new in V1.3.0)_
 

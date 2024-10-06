@@ -1,5 +1,6 @@
 // MIT License
 
+// Copyright (c) 2024 Philippe Chevrier
 // Copyright (c) 2020 Johannes Bonk
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,8 +22,8 @@
 // SOFTWARE.
 
 const vscode    = require('vscode');
-const path      = require('path');
 const { spawn } = require('child_process');
+const LsTomlWriter = require('./LsTomlWriter.js')
 
 
 // The channel that will be used to output errors
@@ -56,6 +57,7 @@ function getSelectedFilePath(givenUri) {
 	}
 	return selectedFileUri.fsPath;
 }
+
 
 
 // this method is called when vs code is activated
@@ -124,6 +126,25 @@ function activate(context) {
 	let disposableExplorerGtkwave = vscode.commands.registerCommand('extension.explorer_gtkwave', waveAsynCmd);
 
 	context.subscriptions.push(disposableExplorerGtkwave);
+
+    // Register an event listener for when a VHDL document is opened
+    vscode.workspace.onDidOpenTextDocument((document) => {
+        // Check the file type
+        if (document.languageId === 'vhdl') {
+            // Check whether this file is listed in vhdl source files
+			LsTomlWriter.createUpdateTomlFile(vscode, settings, GHDL, document.uri.fsPath);
+        }
+    });
+
+	vscode.workspace.onDidChangeWorkspaceFolders((event) => {
+		event.added.forEach(folder => {
+		  console.log(`Folder open: ${folder.uri.fsPath}`);
+		  // Check whether it is possible to list VHDL files in this folder
+		  LsTomlWriter.createUpdateTomlFile(vscode, settings, GHDL);
+		});
+	  });
+
+	LsTomlWriter.createUpdateTomlFile(vscode, settings, GHDL);
 
 	console.log('VHDL-Wave now active!'); // log extension start
 }
@@ -255,6 +276,7 @@ function ghdlOptions(command, userOptions, filePath, runOptions = []) {
  * @param {string} filePath
  */
 async function analyzeFile(filePath) {
+	LsTomlWriter.createUpdateTomlFile(vscode, settings, GHDL, filePath);
 	const [ dirPath, userOptions, fileName, , ] = await settings.get(filePath, TaskEnum.analyze); //get user specific settings
 	executeCommand(GHDL, ghdlOptions('-a', userOptions, filePath), dirPath, fileName + ' analyzed without errors');
 }

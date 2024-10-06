@@ -64,6 +64,7 @@ class Settings {
         return dirPath;
     }
 
+
     /**
      * @param {{ get: (arg0: string) => any; }} workspaceConfig
      * @param {string} dirPath
@@ -86,7 +87,7 @@ class Settings {
         }
         return libPath;
     }
-    
+
 
     getExtensionId() {
         return "vhdl-wave"; 
@@ -124,8 +125,8 @@ class Settings {
         const workDir = this.getWorkLibraryPath(workspaceConfig, overrideData, dirPath);
         if (! Array.isArray(workDir)) {
             if(task == TaskEnum.analyze) {
-                settingsList = [].concat(this.getWorkDirectoryName(workspaceConfig, overrideData),
-                                         this.getWorkLibraryOption(workDir) ,
+                settingsList = [].concat(this.getWorkLibNameOption(workspaceConfig, overrideData),
+                                         this.getWorkLibPathOption(workDir) ,
                                          this.getLibraryDirectories(workspaceConfig) ,
                                          this.getVhdlStandard(workspaceConfig) ,
                                          this.getIeeeVersion(workspaceConfig) ,
@@ -138,8 +139,8 @@ class Settings {
                                          this.getMbComments(workspaceConfig) 
                                         );
             } else if(task == TaskEnum.elaborate) {
-                settingsList = [].concat(this.getWorkDirectoryName(workspaceConfig, overrideData) ,
-                                         this.getWorkLibraryOption(workDir) ,
+                settingsList = [].concat(this.getWorkLibNameOption(workspaceConfig, overrideData) ,
+                                         this.getWorkLibPathOption(workDir) ,
                                          this.getLibraryDirectories(workspaceConfig) ,
                                          this.getVhdlStandard(workspaceConfig) , 
                                          this.getIeeeVersion(workspaceConfig) ,
@@ -152,8 +153,8 @@ class Settings {
                                          this.getMbComments(workspaceConfig)
                                         );
             } else if(task == TaskEnum.run) {
-                settingsList = [].concat(this.getWorkDirectoryName(workspaceConfig, overrideData) , 
-                                         this.getWorkLibraryOption(workDir) ,
+                settingsList = [].concat(this.getWorkLibNameOption(workspaceConfig, overrideData) , 
+                                         this.getWorkLibPathOption(workDir) ,
                                          this.getLibraryDirectories(workspaceConfig) ,
                                          this.getVhdlStandard(workspaceConfig) , 
                                          this.getIeeeVersion(workspaceConfig) ,
@@ -179,14 +180,25 @@ class Settings {
     }
 
     /**
-     * @param {{get: (arg0: string) => any;}} workspaceConfig
+     * @param {{ get: (arg0: string) => any; }} workspaceConfig
      * @param {{ [x: string]: any; }} overrideData
+     * @returns {string}
      */
-    getWorkDirectoryName(workspaceConfig, overrideData) {
+    getWorkLibraryName(workspaceConfig, overrideData) {
         let libName = overrideData['WorkLibraryName'];
         if (!libName) {
             libName = workspaceConfig.get('library.WorkLibraryName')
         }
+        return libName;
+    }
+
+    /**
+     * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     * @param {{ [x: string]: any; }} overrideData
+     * @returns {string[]}
+     */
+    getWorkLibNameOption(workspaceConfig, overrideData) {
+        const libName = this.getWorkLibraryName(workspaceConfig, overrideData);
         if((libName != "") && (libName != null)) {
             return [ `--work=${libName}` ];
         } else {
@@ -196,8 +208,9 @@ class Settings {
 
     /**
      * @param {string} workDir
+     * @returns {string[]}
      */
-    getWorkLibraryOption(workDir) {
+    getWorkLibPathOption(workDir) {
         if(workDir == "") {
             return [];
         } 
@@ -207,27 +220,38 @@ class Settings {
     }
 
     /**
-     * @param {{get: (arg0: string) => any;}} workspaceConfig
+     * 
+     * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     * @returns {string[]}
      */
-    getLibraryDirectories(workspaceConfig) {
-        let cmdOption = [];
+    getRawLibraryDirArray(workspaceConfig) {
+        const libraries = [];
         const libPathArr = workspaceConfig.get("library.LibraryDirectories");
         if (libPathArr != '') {
-            libPathArr.forEach(libPath => {
+            for(const libPath of libPathArr) {
                 if(fs.existsSync(libPath)) {
-                    cmdOption = cmdOption.concat([ `-P${libPath}` ]);
+                    libraries.push(libPath);
                 } else {
                     this.vscode.window.showInformationMessage(`Specified path of external library '${libPath}' not found, ignoring argument. Check value in extension settings`);
                 }
-            });
+            }
         }
-        return cmdOption;
+        return libraries;
+    }
+
+    /**
+     * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     * @returns {string[]}
+     */
+    getLibraryDirectories(workspaceConfig) {
+        return this.getRawLibraryDirArray(workspaceConfig).map(dir => `-P${dir}`);
     }
 
     /**
      * @param {{get: (arg0: string) => any;}} workspaceConfig
      * @param {string} dirPath
      * @param {string} unitName
+     * @returns {Promise<string[]>}
      */
     async getWaveFile(workspaceConfig, dirPath, unitName) {
         let waveFile = workspaceConfig.get("simulation.WaveFile");
@@ -273,17 +297,28 @@ class Settings {
         return [  `--wave=${waveFile}` ];
     }
 
+
+    /**
+     * @param {{get: (arg0: string) => any;}} workspaceConfig
+     * @returns {string}
+     */
+    getRawVhdlStandard(workspaceConfig) {
+        return workspaceConfig.get("standard.VHDL");
+    }
+    
     /**
      * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     * @returns {string[]}
      */
     getVhdlStandard(workspaceConfig) {
-        const vhdlStd = workspaceConfig.get("standard.VHDL");
-        const cmdOption = `--std=${vhdlStd}`;
+        const vhdlStd = this.getRawVhdlStandard(workspaceConfig);
+        const cmdOption = [ `--std=${vhdlStd}` ];
         return cmdOption;
     }
 
     /**
      * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     * @returns {string[]}
      */
     getIeeeVersion(workspaceConfig) {
         const ieeVer = workspaceConfig.get("standard.IEEE");
@@ -302,6 +337,7 @@ class Settings {
 
     /**
      * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     * @returns {string[]}
      */
     getVerbose(workspaceConfig) {
         if(workspaceConfig.get("general.verbose")) {
@@ -313,6 +349,7 @@ class Settings {
 
     /**
      * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     * @returns {string[]}
      */
     getTimeResolution(workspaceConfig) {
         const timeRes = workspaceConfig.get("simulation.TimeResolution")
@@ -322,6 +359,7 @@ class Settings {
 
     /**
      * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     * @returns {string[]}
      */
     getStopTime(workspaceConfig) {
         let stopTime = workspaceConfig.get("simulation.StopTime");
@@ -333,6 +371,7 @@ class Settings {
 
     /**
      * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     * @returns {string[]}
      */
     getRelaxedRules(workspaceConfig) {
         if(workspaceConfig.get("general.RelaxedRules")) {
@@ -344,6 +383,7 @@ class Settings {
 
     /**
      * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     * @returns {string[]}
      */
     getVitalChecks(workspaceConfig) {
         if(workspaceConfig.get("general.vitalChecks")) {
@@ -355,6 +395,7 @@ class Settings {
 
     /**
      * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     * @returns {string[]}
      */
     getPsl(workspaceConfig) {
         if(workspaceConfig.get("general.PSL")) {
@@ -366,6 +407,7 @@ class Settings {
 
     /**
      * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     * @returns {string[]}
      */
     getExplicit(workspaceConfig) {
         if(workspaceConfig.get("general.explicit")) {
@@ -377,6 +419,7 @@ class Settings {
 
     /**
      * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     * @returns {string[]}
      */
     getSynBinding(workspaceConfig) {
         if(workspaceConfig.get("general.synBinding")) {
@@ -388,6 +431,7 @@ class Settings {
 
     /**
      * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     * @returns {string[]}
      */
     getMbComments(workspaceConfig) {
         if(workspaceConfig.get("general.mbComments")) {
@@ -396,6 +440,14 @@ class Settings {
             return [];
         }
     }
+
+    /**
+     * @param {{ get: (arg0: string) => any; }} workspaceConfig
+     * @returns {Boolean}
+     */
+    isEnableLsToml(workspaceConfig) {
+        return workspaceConfig.get("general.enableLsToml");
     }
+}
 
 module.exports = { Settings, TaskEnum };
