@@ -39,6 +39,26 @@ It is also possible to invoke the GHDL functions via the following keybindings.
 | ghdl clear     | `ctrl + alt + c` | `shift + alt + c` | `shift + cmd + c` |
 | ghdl remove    | `ctrl + alt + d` | `shift + alt + d` | `shift + cmd + d` |
 
+
+## `vhdl-wave` file _(new in V1.3.0)_
+
+The files .vscode/vhdl-wave.json in the workspace folder allows overriding the following settings: `Work Library Name` and `Work Library Path`.
+
+The aim is to allow switching easily between library development and main application development.
+
+The standard development takes place in the `work` library which is the default _VHDL-Wave_ setting. But when you develop a library you must name the working library with the target library name. And you may want to place it in a particular place where you locate your libraries.
+
+By defining specific library name and location in `vhdl-wave.json` file of the library development folder you will allow to use the right parameters as soon you enter the library development folder with vscode.
+
+The typical content of `vhdl-wave.json` file is :
+
+```JSON
+{ 
+    "WorkLibraryPath": "/mylibrary/rootpath/" ,
+    "WorkLibraryName": "myCustomLibrary"
+}
+```
+
 ## Contributions
 
 In case you encounter any problems or have suggestions regarding the extension, feel free to open an issue at first.
