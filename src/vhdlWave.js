@@ -84,7 +84,6 @@ function activate(context) {
         await vscode.window.activeTextEditor.document.save(); //save open file before analyzing it
         makeUnit(getSelectedFilePath(selectedFile)); 
     }
-    const cleanAsynCmd   = async (/** @type {any} */ selectedFile) => { cleanGeneratedFiles(getSelectedFilePath(selectedFile)); }
     const removeAsynCmd  = async (/** @type {any} */ selectedFile) => { removeGeneratedFiles(getSelectedFilePath(selectedFile)); }
     const waveAsynCmd    = async (/** @type {{ fsPath: string; }} */ selectedFile) => { invokeGtkwave(selectedFile.fsPath); }
     
@@ -112,12 +111,6 @@ function activate(context) {
     context.subscriptions.push(disposableEditorMakeUnit);
     context.subscriptions.push(disposableExplorerMakeUnit); 
     
-    let disposableEditorClean = vscode.commands.registerCommand('extension.editor_ghdl-clean', cleanAsynCmd);
-    let disposableExplorerClean = vscode.commands.registerCommand('extension.explorer_ghdl-clean', cleanAsynCmd);
-
-    context.subscriptions.push(disposableEditorClean); 
-    context.subscriptions.push(disposableExplorerClean);
-
     let disposableEditorRemove = vscode.commands.registerCommand('extension.editor_ghdl-remove', removeAsynCmd);
     let disposableExplorerRemove = vscode.commands.registerCommand('extension.explorer_ghdl-remove', removeAsynCmd);
 
@@ -371,21 +364,6 @@ async function makeUnit(filePath) {
     }
 }
 
-/*
-**Function: cleanGeneratedFiles
-**usage: removes generated object files 
-**parameter: filePath
-**return value(s): none
- */
-/**
- * @param {string} filePath
- */
-async function cleanGeneratedFiles(filePath) {
-    if (await prepareCommand(filePath)) {
-        const command = await ghdlOptions(CommandTag.remove, filePath);
-        executeCommand(GHDL, command.paramList, 'cleaned generated files');
-    }
-}
 
 /*
 **Function: removeGeneratedFiles
@@ -398,8 +376,21 @@ async function cleanGeneratedFiles(filePath) {
  */
 async function removeGeneratedFiles(filePath) {
     if (await prepareCommand(filePath)) {
-        const command = await ghdlOptions(CommandTag.remove, filePath);
-        executeCommand(GHDL, command.paramList, 'Library and generated files removed');
+        const buttonText = 'Yes, remove';
+
+        const answer = await vscode.window.showWarningMessage(
+            'Are you sure you want to remove completely your library?',
+            { modal: true },
+            buttonText,
+        );
+        
+        if (answer == buttonText) {
+            const command = await ghdlOptions(CommandTag.remove, filePath);
+            executeCommand(GHDL, command.paramList, 'Library and generated files removed');
+        }
+        else {
+            vscode.window.showInformationMessage('Command cancelled.');
+        }
     }
 }
 

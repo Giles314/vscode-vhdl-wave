@@ -57,10 +57,6 @@
         "title": "Make unit"
       },
       {
-        "command": "extension.editor_ghdl-clean",
-        "title": "Clean"
-      },
-      {
         "command": "extension.editor_ghdl-remove",
         "title": "Remove"
       },
@@ -79,10 +75,6 @@
       {
         "command": "extension.explorer_ghdl-make_unit",
         "title": "Make unit"
-      },
-      {
-        "command": "extension.explorer_ghdl-clean",
-        "title": "Clean"
       },
       {
         "command": "extension.explorer_ghdl-remove",
@@ -243,22 +235,24 @@
       "ghdl.editor_submenu": [
         {
           "when": "resourceExtname != .vht",
-          "command": "extension.editor_ghdl-analyze_file"
+          "command": "extension.editor_ghdl-analyze_file",
+          "group": "ghdl_editor@1"
         },
         {
-          "command": "extension.editor_ghdl-elaborate_file"
+          "command": "extension.editor_ghdl-elaborate_file",
+          "group": "ghdl_editor@2"
         },
         {
-          "command": "extension.editor_ghdl-run_unit"
+          "command": "extension.editor_ghdl-run_unit",
+          "group": "ghdl_editor@3"
         },
         {
-          "command": "extension.editor_ghdl-make_unit"
+          "command": "extension.editor_ghdl-make_unit",
+          "group": "ghdl_editor@4"
         },
         {
-          "command": "extension.editor_ghdl-clean"
-        },
-        {
-          "command": "extension.editor_ghdl-remove"
+          "command": "extension.editor_ghdl-remove",
+          "group": "ghdl_editor@5"
         }
       ],
       "explorer/context": [
@@ -277,27 +271,23 @@
         {
           "when": "resourceExtname != .vht",
           "command": "extension.explorer_ghdl-analyze_file",
-          "group": "7_modification@3"
+          "group": "ghdl_explorer@1"
         },
         {
           "command": "extension.explorer_ghdl-elaborate_file",
-          "group": "7_modification@4"
+          "group": "ghdl_explorer@2"
         },
         {
           "command": "extension.explorer_ghdl-run_unit",
-          "group": "7_modification@5"
+          "group": "ghdl_explorer@3"
         },
         {
           "command": "extension.explorer_ghdl-make_unit",
-          "group": "7_modification@5"
-        },
-        {
-          "command": "extension.explorer_ghdl-clean",
-          "group": "7_modification@6"
+          "group": "ghdl_explorer@4"
         },
         {
           "command": "extension.explorer_ghdl-remove",
-          "group": "7_modification@7"
+          "group": "ghdl_explorer@5"
         }
       ]
     },
@@ -325,12 +315,6 @@
         "key": "ctrl+alt+m",
         "mac": "shift+cmd+m",
         "linux": "shift+alt+m"
-      },
-      {
-        "command": "extension.editor_ghdl-clean",
-        "key": "ctrl+alt+c",
-        "mac": "shift+cmd+c",
-        "linux": "shift+alt+c"
       },
       {
         "command": "extension.editor_ghdl-remove",

@@ -5,7 +5,7 @@ This extension allows you to invoke GHDL functions, as well as GTKWave to perfor
 
 ## Requirements
 
-You will need to have [GHDL](https://github.com/ghdl/ghdl/releases) and [GTKWave](http://gtkwave.sourceforge.net/) installed on your system. Furthermore both must be set in your environment variables. 
+You will need to have [GHDL](https://github.com/ghdl/ghdl/releases) and [GTKWave](http://gtkwave.sourceforge.net/) installed on your system. Furthermore both must be set in your environment variables.
 
 ## Usage
 
@@ -19,7 +19,6 @@ At present it is possible to invoke the following GHDL functions by either right
 | ghdl elaborate | `ghdl -e [Unit]`               |
 | ghdl run       | `ghdl -r [Unit] [export file]` |
 | ghdl make      | `ghdl -m [unit]` (+ run if OK) |
-| ghdl clear     | `ghdl -c`                      |
 | ghdl remove    | `ghdl --remove`                |
 
 In addition to that the GHDL analyze function offers you error highlighting in the editor.
@@ -45,7 +44,6 @@ It is also possible to invoke the GHDL functions via the following keybindings.
 | ghdl elaborate | `ctrl + alt + l` | `shift + alt + e` | `shift + cmd + e` |
 | ghdl run       | `ctrl + alt + r` | `shift + alt + r` | `shift + cmd + r` |
 | ghdl make      | `ctrl + alt + m` | `shift + alt + m` | `shift + cmd + m` |
-| ghdl clear     | `ctrl + alt + c` | `shift + alt + c` | `shift + cmd + c` |
 | ghdl remove    | `ctrl + alt + d` | `shift + alt + d` | `shift + cmd + d` |
 
 ## VHDL-LS _(new in V1.3.0)_
