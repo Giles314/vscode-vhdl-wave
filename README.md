@@ -61,7 +61,7 @@ These library files are then parsed to find the corresponding source files which
 
 ## `vhdl-wave` file _(new in V1.3.0)_
 
-The files .vscode/vhdl-wave.json in the workspace folder allows overriding the following settings: `Work Library Name` and `Work Library Path`.
+The file `.vscode/vhdl-wave.json` in the workspace folder allows overriding the following settings: `Work Library Name` and `Work Library Path`.
 
 The aim is to allow switching easily between library development and main application development.
 
@@ -69,7 +69,7 @@ The standard development takes place in the `work` library which is the default 
 
 By defining specific library name and location in `vhdl-wave.json` file of the library development folder you will allow to use the right parameters as soon you enter the library development folder with vscode.
 
-The typical content of `vhdl-wave.json` file is :
+The typical content of `vhdl-wave.json` file to develop a library `myCustomLibrary` is:
 
 ```JSON
 { 
