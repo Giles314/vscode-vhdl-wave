@@ -7,6 +7,9 @@
 * #22 Fix setup changes not taken into account
 * #23 Raise error when GHDL or GTKWave are not found
 * #24 Improved packaging
+* #16 Add Yosys (+ GHDL) support to synthesize the VHDL design for GateMate FPGA (result in Verilog netlist)
+* Known limitation: Though VHDL is case insensitive, its conversion in verilog requires that the top entity case matches its file case
+  else Yosys will fail with ```ERROR: Module '<module-name-following-unit-file-case>' not found!```
 
 ### version 1.4.0
 

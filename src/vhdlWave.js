@@ -36,9 +36,11 @@ let textDecoder;
 
 const GHDL    = 'ghdl';
 const GTKWAVE = 'gtkwave';
+const YOSYS   = 'yosys';
 
-const { Settings, CommandTag } = require('./Settings.js');
 
+const { Settings, CommandTag, TOOLCHAIN_ENVVAR } = require('./Settings.js');
+  
 const settings = new Settings(vscode)
 
 /*Function: getSelectedFilePath
@@ -60,6 +62,18 @@ function getSelectedFilePath(givenUri) {
     return selectedFileUri.fsPath;
 }
 
+
+/**
+ * @param {string} tool
+ * @returns {string} The path to the tool
+ */
+function getToolPath(tool) {
+    const toolPath = settings.getToolPath(tool);
+    if (toolPath === undefined) {
+        vscode.window.showErrorMessage(`'${tool}' path not found. Define ${TOOLCHAIN_ENVVAR} environment variable. Check README.md for more information.`);
+    }
+    return toolPath;
+}
 
 
 // this method is called when vs code is activated
@@ -88,6 +102,8 @@ function activate(context) {
     const removeAsynCmd  = async (/** @type {any} */ selectedFile) => { removeGeneratedFiles(getSelectedFilePath(selectedFile)); }
     const waveAsynCmd    = async (/** @type {{ fsPath: string; }} */ selectedFile) => { invokeGtkwave(selectedFile.fsPath); }
     
+    const synthesizeAsynCmd  = async (/** @type {any} */ selectedFile) => { synthesizeProject(getSelectedFilePath(selectedFile)); }
+
     let disposableEditorAnalyze = vscode.commands.registerCommand('extension.editor_ghdl-analyze_file', analyzeAsyncCmd);
     let disposableExplorerAnalyze = vscode.commands.registerCommand('extension.explorer_ghdl-analyze_file', analyzeAsyncCmd);
 
@@ -121,6 +137,13 @@ function activate(context) {
     let disposableExplorerGtkwave = vscode.commands.registerCommand('extension.explorer_gtkwave', waveAsynCmd);
 
     context.subscriptions.push(disposableExplorerGtkwave);
+
+    let disposableEditorSynthesize = vscode.commands.registerCommand('extension.editor_yosys-synth', synthesizeAsynCmd);
+    let disposableExplorerSynthesize = vscode.commands.registerCommand('extension.explorer_yosys-synth', synthesizeAsynCmd);
+
+    context.subscriptions.push(disposableEditorSynthesize); 
+    context.subscriptions.push(disposableExplorerSynthesize);
+
 
     // Register an event listener for when a VHDL document is opened
     vscode.workspace.onDidOpenTextDocument((document) => {
@@ -199,7 +222,7 @@ async function executeCommand(command, args, successMessage, continueLog = false
         let endOfCommand = false;
         let returnCode;
 
-        const spawnProcess = spawn(command, args, {cwd: settings.dirPath});
+        const spawnProcess = spawn(command, args, {cwd: settings.buildPath});
         
         spawnProcess.stderr.on('data', (receivedData) => {
             decodeDataToOutputChannel(receivedData);
@@ -262,10 +285,18 @@ async function ghdlOptions(command, filePath) {
         case CommandTag.elaborate:
         case CommandTag.run:          
         case CommandTag.make:
+        case CommandTag.synth:
             targetUnit = settings.unitName;
             break;
     }
     const options = [ command ].concat(userOptions);
+    switch (command) { 
+        case CommandTag.synth :
+            options.push(settings.get_project_source());
+            options.push('-e');
+            break;
+        default:
+    }
     if (targetUnit != '') {
         options.push(targetUnit);
     }
@@ -278,12 +309,27 @@ async function ghdlOptions(command, filePath) {
  * @returns {Promise<boolean>}
  */
 async function prepareCommand(filePath) {
-    await settings.refresh(filePath)
+    await settings.refresh(filePath);
     const isValidContext = settings.isWorkLibDirExists;
     if (!isValidContext) {
         vscode.window.showErrorMessage(`Path of library 'WORK' not found. Create '${settings.workLibDirPath}' or check value in extension settings or in .vscode/.vhdl-ware.js`);
     }
     return isValidContext;
+}
+
+
+/**
+ * @param {string} filePath
+ * @param {string} tool
+ * @returns {Promise<string>}
+ */
+async function prepareToolChain(filePath, tool) {
+    await settings.refresh(filePath, /*mustCreateBuildDir*/true);
+    const ToolPath = getToolPath(tool);
+    if (ToolPath !== undefined) {
+        settings.makeSubDirs();
+    }
+    return ToolPath;
 }
 
 //=========================================== Command functions ===========================================
@@ -414,6 +460,34 @@ async function invokeGtkwave(filePath) {
     if (await prepareCommand(filePath)) {
         const command = await ghdlOptions(CommandTag.wave, filePath);
         executeCommand(settings.wavePath, command.paramList, 'GTKWave completed');
+    }
+}
+
+
+/*
+**Function: synthesizeProject
+**usage: Synthesize the project using Yosys to produce a net list from VHDL source files 
+**parameter: path of the file that is the top module
+**return value(s): none
+*/
+/**
+ * @param {string} filePath
+ */
+async function synthesizeProject(filePath) {
+    const yosysToolPath = await prepareToolChain(filePath, YOSYS);
+    if (yosysToolPath !== undefined) {
+        const command = await ghdlOptions(CommandTag.synth, filePath);
+        const quotedList = [ GHDL, 
+                            command.paramList.join(' ') + ';',
+                            'synth_gatemate',
+                            '-top', 
+                            command.unit, 
+                            '-nomx8',
+                            '-vlog',
+                            settings.getSynthNetlistFilename(command.unit) ];
+        const quotedParam = quotedList.join(' ');
+        let paramList = ['-l', settings.getLogFilePath('synth.log'), '-p', quotedParam];
+        await executeCommand(yosysToolPath, paramList, `Synthesize ${command.unit} completed`);
     }
 }
 

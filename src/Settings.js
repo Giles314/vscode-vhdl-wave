@@ -25,7 +25,12 @@
 
 const fs     = require('fs');
 const path   = require('path');
+const { MiniGlob } = require('./util/miniglob.js');
+
 const whichSync  = require('./util/which.js'); // extracted from https://www.npmjs.com/package/which
+
+
+const TOOLCHAIN_ENVVAR = 'GATEMATE_TOOLCHAIN_PATH';
 
 const CommandTag = Object.freeze({
     "analyze":'-a',
@@ -35,6 +40,7 @@ const CommandTag = Object.freeze({
     "clean": '--clean',
     "remove": '--remove',
     "wave": '-z',
+    "synth": '--warn-no-binding -C --ieee=synopsys',
 });
 
 const WAVE_EXT = 'ghw';
@@ -47,28 +53,30 @@ const ghwDialogOptions = {
    }
 };
 
+
 const defaultWorkLibNameInVhdlLs = "defaultLibrary";
     
 
 /**
- * @param {string} exe
- * @returns {string}
+ * @param {string} dirPath
+ * @param {string} explainName
+ * @returns {boolean}
  */
-function whichPath (exe, vscode) {
-    const found = whichSync(exe, { nothrow: true });
-    if (found) {
-        if (Array.isArray(found)) {
-            vscode.window.showErrorMessage(`Found several ${exe} in PATH environment variable. Will use first.`);
-            return found[0];
+function createDir(dirPath, explainName) {
+    let result = true;
+    try {
+        fs.accessSync(dirPath, fs.constants.F_OK);
+    } 
+    catch (err) {
+        try {
+            fs.mkdirSync(dirPath, 0o744);
         }
-        else {
-            return found;
+        catch(err) {
+            console.log(`Failed to create ${explainName} directory at ${dirPath}`);
+            result = false;
         }
     }
-    else {
-        vscode.window.showErrorMessage(`Cannot find ${exe}. Add path of the ${exe} directory to your PATH environment variable.`);
-        return exe;
-    }
+    return result;
 }
 
 
@@ -97,31 +105,50 @@ class Settings {
     }
 
 
-    getWorkLibraryPath() {
-        this.workLibDir = this.workspaceOverride['WorkLibraryPath'];
-        if (! this.workLibDir) {
-            this.workLibDir = this.workspaceConfig.get("library.WorkLibraryPath");
+    getToolPath(toolName) {
+        let toolPath = undefined;
+        const toolchainDir = process.env[TOOLCHAIN_ENVVAR];
+        if (toolchainDir !== undefined) {
+            const execName = process.platform === 'win32' ? toolName + '.exe' : toolName;
+            toolPath = path.join(toolchainDir, toolName, execName).toString();
+            if (!fs.existsSync(toolPath)) {
+                toolPath = undefined;
             }
-        if((this.workLibDir == "") || (this.workLibDir == null)) {
-            this.workLibDir = "";
         }
-        else {
-            if (! path.isAbsolute(this.workLibDir)) {
-                this.workLibDir = path.join(this.dirPath, this.workLibDir);
+        return toolPath;
     }
-            if(! fs.existsSync(this.workLibDir)) {
-                // Include the path inside a list to indicate it does not exists
-                this.workLibDir = [ this.workLibDir ];
+
+
+    getLogFilePath(logFile) {
+        const LogPath = path.join(this.logPath, logFile);
+        return LogPath.toString().replace(/\\/g, '/');
     }
+
+
+    makeSubDirs()  {
+        const result = createDir(this.logPath, 'log')
+                     && createDir(this.netPath, 'net');
+        if (!result) {
+            this.vscode.window.showErrorMessage('Failed to create log or net sub-directories in build directory');
         }
+        return result;
     }
 
 
     /**
+     * @param {string} unit
+     * @returns {string}
+     */
+    getSynthNetlistFilename(unit) {
+        return `net/${unit}_synth.v`
+    }
+    
+    
+    /**
      * @param {string | undefined} filePath  The path of the file that is the target of the command
      * @returns {Promise<void>}
      */
-    async refresh(filePath = undefined) {
+    async refresh(filePath = undefined, mustCreateBuildDir = false) {
 
         this.workspaceConfig = this.vscode.workspace.getConfiguration(this.getExtensionId());
 
@@ -154,19 +181,35 @@ class Settings {
         /**
          * @type {boolean} isWorkLibDirExists
          */
-        this.isWorkLibDirExists = true;
+        this.isWorkLibDirExists = false;
+
+        /**
+         * @type {boolean} isToolChainDirExists
+         */
+        this.isToolChainDirExists = false;
 
         /**
          * @type {string[]} libraryPaths
          */
         this.libraryPaths = [];
 
+        let pattern = './src/**/*.vhd';
+        if (! path.isAbsolute(pattern)) {
+            pattern = path.join(this.dirPath, pattern).replace(/\\/g, '/');
+        }
+
+        /**
+         * @type {string[]} includeCoreSourceFiles
+         */
+        this.includeCoreSourceFiles = [ pattern, pattern + 'l' ];
+
         /**
          * @type {string[]} cmdOption
          */
         this.cmdOption = [];
 
-        if (this.dirPath != '') {
+        let result = (this.dirPath != '');
+        if (result) {
             if (filePath !== undefined) {
                 this.baseName = path.basename(filePath);
                 this.unitName = this.baseName.substring(0, this.baseName.lastIndexOf("."));
@@ -181,23 +224,32 @@ class Settings {
 
 
             /**
+             * @type {string} buildPath
+             */
+            this.buildPath = this.workspaceConfig.get['library.BuildRootPath'];
+            if (! this.buildPath) {
+                this.buildPath = path.join(this.dirPath, 'build');
+            }
+            else {
+                if (! path.isAbsolute(this.buildPath)) {
+                    this.buildPath = path.join(this.dirPath, this.buildPath);
+                }
+            }
+
+
+            /**
              * @type {string} workLibDirPath
              */
             this.workLibDirPath = this.workspaceOverride['WorkLibraryPath'];
             if (this.workLibDirPath === undefined) {
                 this.workLibDirPath = this.workspaceConfig.get("library.WorkLibraryPath");
             }
-            if (this.workLibDirPath == null) {
-                this.workLibDirPath = "";
+            if ((this.workLibDirPath == null) || (this.workLibDirPath == '')) {
+                this.workLibDirPath = this.buildPath;
+                mustCreateBuildDir = true;
             }
-            else if (this.workLibDirPath != "") {
-                if (! path.isAbsolute(this.workLibDirPath)) {
+            else if (! path.isAbsolute(this.workLibDirPath)) {
                 this.workLibDirPath = path.join(this.dirPath, this.workLibDirPath);
-            }
-                if(! fs.existsSync(this.workLibDirPath)) {
-                    // Include the path inside a list to indicate it does not exists
-                    this.isWorkLibDirExists = false;
-                }
             }
 
 
@@ -213,6 +265,7 @@ class Settings {
                 this.workLibName = '';
             }
 
+
             const libPaths = this.workspaceConfig.get('library.LibraryDirectories');
             if (libPaths != '') {
                 for(const libPath of libPaths) {
@@ -224,6 +277,7 @@ class Settings {
                 }
             }
 
+            
             /**
              * @type {string} cmdOption
              */
@@ -258,16 +312,39 @@ class Settings {
                     }
                 }
             }
-        }
 
             /**
              * @type {string[]} commonOptions
              */
             this.commonOptions = [];
+
+
+            if (mustCreateBuildDir)  {
+                result = createDir(this.buildPath, 'build');
+                this.isToolChainDirExists = result;
             }
+
+            if(fs.existsSync(this.workLibDirPath)) {
+                this.isWorkLibDirExists = true;
+            }
+        }
+
+        if (result) {
+            /**
+             * @type {string} logPath
+             */
+            this.logPath = path.join(this.buildPath, 'log');
 
 
             /**
+             * @type {string} netPath
+             */
+            this.netPath = path.join(this.buildPath, 'net');
+        }
+    }
+
+
+    /**
      * Compute the given command parameter list(s)
      * - First list (used by most tasks)
      * - Second list (used only by the run task)
@@ -303,6 +380,18 @@ class Settings {
                     this.getVhdlStandardOption() ,
                     this.getVerbose()
                 );
+                break;
+            case CommandTag.synth:
+                settingsList = [].concat(
+                    this.getLibraryDirsOption() ,
+                    this.getVhdlStandardOption() ,
+                    this.getVerbose() ,
+                    this.getRelaxedRules() ,
+                    this.getVitalChecks() ,
+                    this.getPsl() ,
+                    this.getExplicit() ,
+                    this.getSynBinding() ,
+                    this.getMbComments());
                 break;
             }
         }
@@ -536,6 +625,26 @@ class Settings {
 
 
     /**
+     * Retrieves the list of VHDL source files from the project directory
+     *
+     * @returns {string} A white space separated list of file paths to the VHDL source files.
+     */
+    get_project_source() {
+        let fileList = [];
+        for (const filePattern of this.includeCoreSourceFiles) {
+            //-- version compatible with glob V11.0.0 (not compatible with vscode included glob)
+            //-- const match = glob.globSync(filePattern); 
+            //-- fileList = fileList.concat(match.found);
+            const pattern = new MiniGlob(filePattern);
+            const match = pattern.getMatchingPaths();
+            fileList = fileList.concat(match);
+        }
+
+        return fileList.join(' ');
+    }
+
+
+    /**
      * Read the content of a GHDL library file and store the list of files in libraryFileLists
      * indexed by the library name.
      * The library file may contain relative paths that are resolved using the directory of the library file.
@@ -668,4 +777,4 @@ class Settings {
     }
 }
 
-module.exports = { Settings, CommandTag };
+module.exports = { Settings, CommandTag, TOOLCHAIN_ENVVAR };

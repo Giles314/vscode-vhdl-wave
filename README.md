@@ -25,14 +25,37 @@ In addition to that the GHDL analyze function offers you error highlighting in t
 
 ### GTKWave
 
-To open your simulation files with GTKWave, simply rightclick on them (.ghw or .vcd file required) in the explorer and then select `gtkwave`
+To open your simulation files with GTKWave, simply right-click on them (.ghw or .vcd file required) in the explorer and then select `gtkwave`
 
-## VHDL-LS _(new in V1.3.0)_
+## Cologne Chip GateMate Tool Chain (Since V2.0)
 
-VHDL-Wave recommends VHDL-LS for syntax, and syntax error highlighting. VHDL-Wave automatically generates the configuration file that VHDL-LS needs to
-find all references. This feature can be disabled in setting (see `vhdl-wave > General: Enable Ls Toml`).
+To make use of these functions you need to install the GateMate Tool Chain. Part of it, is open source, but other parts are not.
+So you must download it on the [Cologne Chip web site](https://colognechip.com/programmable-logic/gatemate/#tab-313423).
+Then after unzipping the downloaded package in a directory, define an environment variable called `GATEMATE_TOOLCHAIN_PATH`
+so it refers to the `bin` sub-directory that contains the yosys, p_r and OpenFPGALoader tools.
 
-It is still possible to complement the generated `vhdl-ls.toml` file with additional data. This must be done below the limit indicated in the file.
+### Yosys synthesis
+
+Yosys is able to synthesize a hardware design to produce an optimized net list referring to logic gates parts of Cologne Chip GateMate basic logic gates and IPs. Unfortunately Yosis is working with Verilog sources and output. But it can use GHDL as a plug-in to convert VHDL hardware design into a basic net list and process it as a starting point to perform the synthesis of the net list.
+
+Because Verilog is case-sensitive, Yosys interprets GHDL output in case-sensitive way. As GHDL use always same case representation for all occurence of a given name, so this is not an issue. The only case of inconsistency occurs when specifiying the top unit.
+
+> To avoid top unit case issue always write the top unit name in lower case (at least when declaring the entity) and name the corresponding source file in lower case.
+
+The VHDL source files that will be compiled by Yosys are those included in the `src` directory and its sub-directories,
+at the root of the workspace directory. This behaviour can not yet be modified ([issue #17](https://github.com/Giles314/vscode-vhdl-wave/issues/17)).
+VHDL-Wave will also include in the synthesis, the libraries that are listed in the setting parameter `Library: Library Directories`.
+This should not include the test bench files that are usually not synthesizable and by essence not part of final implemented project.
+Therefore the test bench files must not be located below the `src` directory.
+
+### Place and Route
+
+Not available yet.
+
+### OpenFPGALoader
+
+Not available yet.
+
 
 ## Keybindings
 
@@ -45,6 +68,7 @@ It is also possible to invoke the GHDL functions via the following keybindings.
 | ghdl run       | `ctrl + alt + r` | `shift + alt + r` | `shift + cmd + r` |
 | ghdl make      | `ctrl + alt + m` | `shift + alt + m` | `shift + cmd + m` |
 | ghdl remove    | `ctrl + alt + d` | `shift + alt + d` | `shift + cmd + d` |
+| synthesize     | `ctrl + alt + s` | `shift + alt + s` | `shift + cmd + s` |
 
 ## VHDL-LS _(new in V1.3.0)_
 

@@ -25,7 +25,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 
-entity BLINK is
+entity blink is
 	generic (
 		WIDTH  : INTEGER := 22
 	);
@@ -37,7 +37,7 @@ entity BLINK is
 end entity;
 
 
-architecture ALGO of BLINK is
+architecture ALGO of blink is
 
 	component SIMPLE_COUNTER
 	generic (
