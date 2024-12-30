@@ -1,6 +1,6 @@
 -- MIT License
 
--- Copyright (c) 2024 Philippe Chevrier
+-- Copyright (c) 2024-2025 Philippe Chevrier
 
 -- Permission is hereby granted, free of charge, to any person obtaining a copy
 -- of this software and associated documentation files (the "Software"), to deal
@@ -20,66 +20,61 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 -- SOFTWARE.
 
-
 library ieee;
 use ieee.std_logic_1164.all;
-use std.textio.all;
+use ieee.numeric_std.all;
 
-entity BENCH is
-end entity;
 
-architecture ALGO of BENCH is
-	signal CLOCK: std_logic := '1';
-	signal RESET: std_logic := '1';
-	signal LED  : std_logic;
+library basic_comp;
+use basic_comp.counter;
 
-	signal CLOCK_COUNT : integer := 0;
-	constant RST_DELAY : integer := 4;
-
-	component BLINK
+entity SIMPLE_COUNTER is
 	generic (
 		WIDTH  : INTEGER
 	);
 	port (
-		CLOCK : IN  std_logic;
-		RESET : IN  std_logic;
-		LED   : OUT std_logic
+		CLOCK   : in std_logic;
+		RESET   : in std_logic;
+		Q       : OUT STD_LOGIC_VECTOR (WIDTH-1 downto 0)
 	);
-	end component BLINK;
+end entity SIMPLE_COUNTER;
 
-	procedure LOG_LOOP (LOOP_COUNT : in integer) is
-		variable PRINT_LINE : line;
-		constant LINE_LABEL : string := "Loop ";
-	begin
-		write(PRINT_LINE, LINE_LABEL);
-		write(PRINT_LINE, LOOP_COUNT, right, 9);
-		writeline(output, PRINT_LINE);
-	end LOG_LOOP;
-	
+
+architecture ALGO of SIMPLE_COUNTER is
+
+	component COUNTER
+	generic (
+		WIDTH  : INTEGER;
+		MODULO : INTEGER
+	);
+	port (
+		CLK    : IN  STD_LOGIC;
+		RESET  : IN  STD_LOGIC;
+		ENABLE : IN  STD_LOGIC;
+		UP     : IN  STD_LOGIC;
+		LOAD   : IN  STD_LOGIC;
+		D      : IN  STD_LOGIC_VECTOR (WIDTH-1 downto 0) := ( others => '0' );
+		Q      : OUT STD_LOGIC_VECTOR (WIDTH-1 downto 0);
+		CARRY  : OUT STD_LOGIC
+	);
+	end component COUNTER;
 
 begin
 
-	DUT_BLINK : BLINK
+	i_COUNTER : COUNTER
 	generic map (
-		WIDTH => 12
+		WIDTH  => WIDTH,
+		MODULO => 2 ** WIDTH
 	)
 	port map (
-		CLOCK => CLOCK,
-		RESET => RESET,
-		LED   => LED
-	);
-
-
-	PERIODIC_LOOP: process
-	begin
-		wait for 50 ns;
-		CLOCK <= not CLOCK;
-		if CLOCK_COUNT mod 2000 = 0 then
-			LOG_LOOP(CLOCK_COUNT/20);
-		end if;
-		CLOCK_COUNT <= CLOCK_COUNT + 1;
-	end process;
-
-	RESET <= '1' when CLOCK_COUNT >= RST_DELAY else '0';
+		CLK    => CLOCK,
+		RESET  => RESET,
+		ENABLE => '1',
+		UP     => '1',
+		LOAD   => '0',
+		D      => ( others => '0' ),
+		Q      => Q,
+		CARRY  => open
+	);	
 
 end architecture;

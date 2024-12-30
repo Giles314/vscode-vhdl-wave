@@ -35,7 +35,6 @@ const ghdlToLsStandardAndYear = {
 };
 
 const VHDL_LS_STANDARD = 0;
-const STANDARD_YEAR    = 1;
 
 const SUCCESS_ERROR   = -1;
 const SUCCESS_WARNING =  0;
@@ -45,151 +44,15 @@ const vhdlFilter = /.vhdl?$/;
 
 
 /**
- * @param {{ workspace: { textDocuments: any[]; }; }} [vscode]
+ * Retrieves the first open VHDL file from the currently open text documents in VS Code.
+ *
+ * @param {{ workspace: { textDocuments: any[]; }; }} vscode - The VS Code API object.
+ * @returns {string} The file name of the first open VHDL file, or undefined if no VHDL files are open.
  */
 function getOpenVhdlFile(vscode) {
     const openFiles = vscode.workspace.textDocuments.map(doc => doc.fileName);
     const vhdlFiles = openFiles.filter((filename) => { return vhdlFilter.test(filename); });
     return vhdlFiles[0];
-}
-
-
-/**
- * @param {{ [x: string]: string[]; }} libraryFileLists
- * @param {string} libraryName
- * @param {string} libraryPath
- */
-function listLibraryFiles(libraryFileLists, libraryName, libraryPath) {
-    try {
-        let baseDirPath;
-        let fileAry;
-        const cfData = fs.readFileSync(libraryPath, { encoding: 'utf8',} );
-        const lines = cfData.toString().split('\n');
-        for(const line of lines) {
-            if (line.startsWith('file')) {
-                const parts = line.split(/\s+/);
-                if (parts.length >= 3) {
-                    const firstField = parts[1];
-                    let absolutePath = parts[2];
-                    if (absolutePath.startsWith('"') && absolutePath.endsWith('"')) {
-                        absolutePath = absolutePath.slice(1, -1);
-                    }
-                    if (firstField === '.') {
-                        if (baseDirPath === undefined) {
-                            baseDirPath = path.dirname(libraryPath)
-                        }
-                        absolutePath = path.resolve(baseDirPath, absolutePath);
-                    } else if (firstField !== '/') {
-                        const errorMessage = `Invalid library line format in line: ${line} of file: ${libraryPath}`;
-                        console.error(errorMessage);
-                        throw errorMessage;
-                    }
-                    if (fileAry === undefined) {
-                        if (libraryFileLists[libraryName] === undefined) {
-                            libraryFileLists[libraryName] = [];
-                        }
-                        fileAry = libraryFileLists[libraryName];
-                    }
-                    if (! fileAry.includes(absolutePath)) {
-                        fileAry.push(absolutePath);
-                    }
-                }
-            }  // Keep line starting with 'file'
-        }  // Read line
-    }
-    catch (err) {
-        const errorMessage = "Error reading library file " + libraryPath + " :\n" + err.toString();
-        throw errorMessage;
-    }
-}
-
-
-const defaultWorkLibNameInVhdlLs = "defaultLibrary";
-
-/**
- * Read the content of the working library used by GHLD to store analyzed files
- * Store the resulting list as an entry in libraryFileLists indexed by
- * the working library index (equal to library name except when default name).
- *
- * When working with the default library 'work' VHDL-LS expects it to be named 'defaultLibrary'
- *
- * When no file has been analyzed yet, the working library may not exist
- * In this case no list is created, libraryFileLists is left unchanged.
- *
- * Return the working library index (even when its entry has not been created)
- *
- * @param {{ refresh: (arg0: string) => Promise<void>;
- *           getParameters: (arg0: string) => Promise<string[][]>;
- *           dirPath: string;
- *           unitName : string;
- *           isWorkLibDirExists: boolean;
- *           workLibDirPath: string;
- *           workLibName: string;
- *           defaultWorkLibraryName: string;
- *           libraryPaths: string[];
- *           getVhdlStandard: () => string;
- *           isEnableLsToml: () => boolean }} settings
- * @param {{ }} libraryFileLists
- * @returns { Promise<string> }
- */
-async function listWorkLibFiles(settings, libraryFileLists) {
-    const directory = settings.workLibDirPath;
-    let workLibName = settings.workLibName;
-    let workLibIndex = workLibName;
-    if ((workLibName == '')) {
-        workLibIndex = defaultWorkLibNameInVhdlLs;
-        workLibName = settings.defaultWorkLibraryName;
-    }
-    const vhdlVersion = settings.getVhdlStandard();
-    const workLibPath = path.join(directory, workLibName + '-obj' + vhdlVersion + '.cf');
-
-    listLibraryFiles(libraryFileLists, workLibIndex, workLibPath);
-    return workLibIndex;
-}
-
-
-/**
- * Read the list of directories to include by GHDL for finding libraries
- * Search libraries in these directories that are libraries matching VHDL version
- * Determine the library name from library filename
- * For each library, add its list of files as an entry in libraryFileLists indexed by library name
- *
- * @param {{ refresh: (arg0: string) => Promise<void>;
- *           getParameters: (arg0: string) => Promise<string[][]>;
- *           dirPath: string;
- *           unitName : string;
- *           isWorkLibDirExists: boolean;
- *           workLibDirPath: string;
- *           workLibName: string;
- *           defaultWorkLibraryName: string;
- *           libraryPaths: string[];
- *           getVhdlStandard: () => string;
- *           isEnableLsToml: () => boolean }} settings
- * @param {{}} libraryFileLists
- */
-function  listPDirList(settings, libraryFileLists) {
-    //-- Get the list of library directories
-    const LibraryDirectories = settings.libraryPaths;
-    //-- Compute the pattern of the name of libraries
-    //-- that correspond to the VHDL standard
-    const vhdlVersion = settings.getVhdlStandard();
-    const libraryNamePattern = new RegExp(`^([a-zA-Z]\\w*)-obj${vhdlVersion}\\.cf$`)
-
-    //-- For each library look for vhdl source files
-    for (const libraryDirPath of LibraryDirectories) {
-        const libraryFiles = fs.readdirSync(libraryDirPath);
-
-        for (const file of libraryFiles) {
-            const cfLibraryMatch = file.match(libraryNamePattern);
-            if (cfLibraryMatch) {
-                const fullLibraryPath = path.join(libraryDirPath, file);
-                if (fs.statSync(fullLibraryPath).isFile()) {
-                    const libraryName = cfLibraryMatch[1];
-                    listLibraryFiles(libraryFileLists, libraryName, fullLibraryPath);
-                }
-            }
-        }
-    }
 }
 
 
@@ -437,7 +300,9 @@ async function updateTomlFile(workspaceDir, standard, workLibIndex, libraryFileL
  *           defaultWorkLibraryName: string;
  *           libraryPaths: string[];
  *           getVhdlStandard: () => string;
- *           isEnableLsToml: () => boolean }} settings
+ *           isEnableLsToml: () => boolean;
+ *           listWorkLibFiles: ({}) => Promise<string>;
+ *           listPDirList: ({}) => void }} settings
  * @param {any} ghdl
  * @param {any} openFile
  */
@@ -448,7 +313,7 @@ async function createUpdateTomlFile(vscode, settings, ghdl, openFile) {
         if ((workspaceDir != '') && settings.isEnableLsToml()) {
             const standard          = ghdlToLsStandardAndYear[settings.getVhdlStandard()];
             const libraryFileLists  = {};
-            let workLibIndex = await listWorkLibFiles(settings, libraryFileLists);
+            let workLibIndex = await settings.listWorkLibFiles(libraryFileLists);
             if (! openFile) {
                 //-- If no file is provided check whether the edited file is a GHDL file
                 openFile = getOpenVhdlFile(vscode);
@@ -466,7 +331,7 @@ async function createUpdateTomlFile(vscode, settings, ghdl, openFile) {
                     workLibFiles.push(openFile);
                 }
             }
-            listPDirList(settings, libraryFileLists);
+            settings.listPDirList(libraryFileLists);
 
             status = await updateTomlFile(workspaceDir, standard, workLibIndex, libraryFileLists);
         }

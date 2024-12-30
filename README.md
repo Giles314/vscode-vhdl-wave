@@ -59,7 +59,7 @@ When a library is added to the configuration (setting `Library Directories`) thi
 
 These library files are then parsed to find the corresponding source files which are then added to `vhdl-ls.toml` file.
 
-## `vhdl-wave` file _(new in V1.3.0)_
+## `vhdl-wave.json` file _(new in V1.3.0)_
 
 The file `.vscode/vhdl-wave.json` in the workspace folder allows overriding the following settings: `Work Library Name` and `Work Library Path`.
 
