@@ -62,6 +62,10 @@
         "title": "Remove"
       },
       {
+        "command": "extension.editor_yosys-synth",
+        "title": "Synthesize"
+      },
+      {
         "command": "extension.explorer_ghdl-analyze_file",
         "title": "Analyze file"
       },
@@ -84,6 +88,10 @@
       {
         "command": "extension.explorer_gtkwave",
         "title": "GTKWave"
+      },
+      {
+        "command": "extension.explorer_yosys-synth",
+        "title": "Synthesize"
       }
     ],
     "configuration": [
@@ -96,11 +104,17 @@
             "default": "",
             "description": "Specifies the name of the 'WORK' library. Set to the default name 'WORK' if left blank."
           },
+          "vhdl-wave.library.BuildRootPath": {
+            "type": "string",
+            "scope": "resource",
+            "default": "",
+            "description": "Specifies the directory where the tool chain generated files will be stored. This directory will also be used to store synthesis results. This directory will be created automatically. Paths relative to the project folder are allowed and recommended. Set to the 'build' directory if left blank. Use './' for the project folder."
+          },
           "vhdl-wave.library.WorkLibraryPath": {
             "type": "string",
             "scope": "resource",
             "default": "",
-            "description": "Specifies the directory where the 'WORK' library is located. This directory MUST exist before using any command. Paths relative to the project folder are allowed. Set to the workspace top directory if left blank."
+            "description": "Specifies the directory where the 'WORK' library is located. This directory will also be used to store synthesis results. This directory MUST exist before using any command. Paths relative to the BuildRootPath folder are allowed. Set to the BuildRootPath directory if left blank."
           },
           "vhdl-wave.library.LibraryDirectories": {
             "type": "array",
@@ -254,6 +268,10 @@
         {
           "command": "extension.editor_ghdl-remove",
           "group": "ghdl_editor@5"
+        },
+        {
+          "command": "extension.editor_yosys-synth",
+          "group": "ghdl_editor@6"
         }
       ],
       "explorer/context": [
@@ -289,6 +307,10 @@
         {
           "command": "extension.explorer_ghdl-remove",
           "group": "ghdl_explorer@5"
+        },
+        {
+          "command": "extension.explorer_yosys-synth",
+          "group": "ghdl_explorer@6"
         }
       ]
     },
@@ -322,6 +344,54 @@
         "key": "ctrl+alt+d",
         "mac": "shift+cmd+d",
         "linux": "shift+alt+d"
+      },
+      {
+        "command": "extension.editor_yosys-synth",
+        "key": "ctrl+alt+s",
+        "mac": "shift+cmd+s",
+        "linux": "shift+alt+s"
+      },
+      {
+        "command": "extension.explorer_ghdl-analyze_file",
+        "key": "ctrl+alt+a",
+        "mac": "shift+cmd+a",
+        "linux": "shift+alt+a"
+      },
+      {
+        "command": "extension.explorer_ghdl-elaborate_file",
+        "key": "ctrl+alt+l",
+        "mac": "shift+cmd+e",
+        "linux": "shift+alt+e"
+      },
+      {
+        "command": "extension.explorer_ghdl-run_unit",
+        "key": "ctrl+alt+r",
+        "mac": "shift+cmd+r",
+        "linux": "shift+alt+r"
+      },
+      {
+        "command": "extension.explorer_ghdl-make_unit",
+        "key": "ctrl+alt+m",
+        "mac": "shift+cmd+m",
+        "linux": "shift+alt+m"
+      },
+      {
+        "command": "extension.explorer_ghdl-remove",
+        "key": "ctrl+alt+d",
+        "mac": "shift+cmd+d",
+        "linux": "shift+alt+d"
+      },
+      {
+        "command": "extension.explorer_gtkwave",
+        "key": "ctrl+alt+g",
+        "mac": "shift+cmd+g",
+        "linux": "shift+alt+g"
+      },
+      {
+        "command": "extension.explorer_yosys-synth",
+        "key": "ctrl+alt+s",
+        "mac": "shift+cmd+s",
+        "linux": "shift+alt+s"
       }
     ],
     "languages": [
