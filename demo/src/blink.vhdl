@@ -20,15 +20,15 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 -- SOFTWARE.
 
-library basic_comp;
-use basic_comp.counter;
-
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 
 entity BLINK is
+	generic (
+		WIDTH  : INTEGER := 22
+	);
 	port (
 		CLOCK : in std_logic;
 		RESET : in std_logic;
@@ -39,44 +39,31 @@ end entity;
 
 architecture ALGO of BLINK is
 
-	component COUNTER
+	component SIMPLE_COUNTER
 	generic (
-		WIDTH  : INTEGER;
-		MODULO : INTEGER
+		WIDTH  : INTEGER
 	);
 	port (
-		CLK    : IN  STD_LOGIC;
+		CLOCK  : IN  STD_LOGIC;
 		RESET  : IN  STD_LOGIC;
-		ENABLE : IN  STD_LOGIC;
-		UP     : IN  STD_LOGIC;
-		LOAD   : IN  STD_LOGIC;
-		D      : IN  STD_LOGIC_VECTOR (WIDTH-1 downto 0) := ( others => '0' );
-		Q      : OUT STD_LOGIC_VECTOR (WIDTH-1 downto 0);
-		CARRY  : OUT STD_LOGIC
+		Q      : OUT STD_LOGIC_VECTOR (WIDTH-1 downto 0)
 	);
-	end component COUNTER;
+	end component SIMPLE_COUNTER;
 	
-	signal Q      : STD_LOGIC_VECTOR (23 downto 0);
-	signal CARRY  : STD_LOGIC;
+	signal Q      : STD_LOGIC_VECTOR (WIDTH-1 downto 0);
 
 begin
 
-	i_COUNTER : COUNTER
+	i_SIMPLE_COUNTER : SIMPLE_COUNTER
 	generic map (
-		WIDTH  => 24,
-		MODULO => 2 ** 24 -1
+		WIDTH  => WIDTH
 	)
 	port map (
-		CLK    => CLOCK,
-		RESET  => RESET,
-		ENABLE => '1',
-		UP     => '1',
-		LOAD   => '0',
-		D      => ( others => '0' ),
-		Q      => Q,
-		CARRY  => CARRY
+		CLOCK  => CLOCK,
+		RESET  => not RESET,
+		Q      => Q
 	);
 
-	LED <= Q(23);
+	LED <= Q(WIDTH-1);
 
 end architecture;

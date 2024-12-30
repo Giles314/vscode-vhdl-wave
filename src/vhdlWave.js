@@ -25,6 +25,8 @@ const vscode    = require('vscode');
 const { spawn } = require('child_process');
 const LsTomlWriter = require('./LsTomlWriter.js')
 const path   = require('path'); 
+const { TextDecoder } = require('util');
+
 
 
 // The channel that will be used to output errors
@@ -36,7 +38,6 @@ const GHDL    = 'ghdl';
 const GTKWAVE = 'gtkwave';
 
 const { Settings, CommandTag } = require('./Settings.js');
-const { TextDecoder } = require('util');
   
 const settings = new Settings(vscode)
 
@@ -68,7 +69,7 @@ function getSelectedFilePath(givenUri) {
 function activate(context) {
 
     if (!outputChannel)
-        outputChannel = vscode.window.createOutputChannel('GHLD Output');
+        outputChannel = vscode.window.createOutputChannel('GHDL Output');
     if (!textDecoder)
         textDecoder = new TextDecoder;
 
@@ -150,7 +151,6 @@ function deactivate() {
         outputChannel = null;
     }
     if (textDecoder) {
-        textDecoder.dispose();
         textDecoder = null;
     }
 }
@@ -185,9 +185,10 @@ function decodeDataToOutputChannel(data) {
  */
 async function executeCommand(command, args, successMessage, continueLog = false) {
     let result = false;
+    
     const executionPromise = new Promise (function(resolve, reject) {
         console.log(command + ' ' + args.join(' ') );
-
+        
         if (! continueLog) {
             outputChannel.clear();
             outputChannel.show();
@@ -280,10 +281,12 @@ async function prepareCommand(filePath) {
     await settings.refresh(filePath)
     const isValidContext = settings.isWorkLibDirExists;
     if (!isValidContext) {
-        vscode.window.showErrorMessage(`Path of library 'WORK' not found. Create '${settings.workLibDirPath}' or check value in extension settings`);
+        vscode.window.showErrorMessage(`Path of library 'WORK' not found. Create '${settings.workLibDirPath}' or check value in extension settings or in .vscode/.vhdl-ware.js`);
     }
     return isValidContext;
 }
+
+//=========================================== Command functions ===========================================
 
 /*
 **Function: analyzeFile
@@ -302,6 +305,7 @@ async function analyzeFile(filePath) {
     }
 }
 
+
 /*
 **Function: elaborateFiles
 **usage: elaborates the unit of the analyzed vhdl source file
@@ -317,6 +321,7 @@ async function elaborateFiles(filePath) {
         await executeCommand(GHDL, command.paramList, command.unit + ' elaborated without errors');
     }
 }
+
 
 /*
 **Function: runUnit
@@ -338,6 +343,7 @@ async function runUnit(filePath) {
         }
     }
 }
+
 
 /*
 **Function: makeUnit
@@ -393,6 +399,7 @@ async function removeGeneratedFiles(filePath) {
         }
     }
 }
+
 
 /*
 **Function: invokeGtkwave
