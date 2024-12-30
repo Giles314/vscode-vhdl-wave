@@ -2,6 +2,12 @@
 
 ## VHDL-Wave
 
+### version 2.0.0
+
+* #16 Add Yosys (+ GHDL) support to synthesize the VHDL design (result in Verilog netlist)
+* Known limitation: Though VHDL is case insensitive, its conversion in verilog requires that the top entity case matches its file case
+  else Yosys will fail with ```ERROR: Module '<module-name-following-unit-file-case>' not found!```
+
 ### version 1.4.0
 
 * #15 Improve usability of Clean/Remove commands.
