@@ -27,7 +27,7 @@ In addition to that the GHDL analyze function offers you error highlighting in t
 
 To open your simulation files with GTKWave, simply right-click on them (.ghw or .vcd file required) in the explorer and then select `gtkwave`
 
-## Cologne Chip GateMate Tool Chain (Since V2.0)
+## Cologne Chip GateMate Tool Chain _(new in V2.0)_
 
 To make use of these functions you need to install the GateMate Tool Chain. Part of it, is open source, but other parts are not.
 So you must download it on the [Cologne Chip web site](https://colognechip.com/programmable-logic/gatemate/#tab-313423).
@@ -50,7 +50,12 @@ Therefore the test bench files must not be located below the `src` directory.
 
 ### Place and Route
 
-Not available yet.
+Place and Route (`p_r`) is a software developped by Cologne Chip that converts the net list obtained by Yosys synthesis of your VHDL hardware design
+to an actual GateMate FPGA implementation. To compute this, it needs the mapping of the design inputs and outputs to the FPGA pins (balls for this chip).
+This must be provided in a file called `<module-filename>.ccf` that must be placed in the same directory as the top module source file.
+> Again because `p_r` is case-sensitive, the pin name case must match the signal name case used in top entity declaration.
+
+Check the example files from the GateMate tool chain package for syntax of this `.ccf` file.
 
 ### OpenFPGALoader
 
@@ -69,8 +74,9 @@ It is also possible to invoke the GHDL functions via the following keybindings.
 | ghdl make      | `ctrl + alt + m` | `shift + alt + m` | `shift + cmd + m` |
 | ghdl remove    | `ctrl + alt + d` | `shift + alt + d` | `shift + cmd + d` |
 | synthesize     | `ctrl + alt + s` | `shift + alt + s` | `shift + cmd + s` |
+| implement      | `ctrl + alt + i` | `shift + alt + i` | `shift + cmd + i` |
 
-## VHDL-LS _(new in V1.3.0)_
+## VHDL-LS
 
 VHDL-Wave recommends VHDL-LS for syntax highlighting. VHDL-Wave automatically generates the configuration file that VHDL-LS needs to
 find all references. This feature can be disabled in setting (see `vhdl-wave > General: Enable Ls Toml`).
@@ -83,7 +89,7 @@ When a library is added to the configuration (setting `Library Directories`) thi
 
 These library files are then parsed to find the corresponding source files which are then added to `vhdl-ls.toml` file.
 
-## `vhdl-wave.json` file _(new in V1.3.0)_
+## `vhdl-wave.json` file
 
 The file `.vscode/vhdl-wave.json` in the workspace folder allows overriding the following settings: `Work Library Name` and `Work Library Path`.
 

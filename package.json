@@ -66,6 +66,10 @@
         "title": "Synthesize"
       },
       {
+        "command": "extension.editor_place&route",
+        "title": "Place & Route"
+      },
+      {
         "command": "extension.explorer_ghdl-analyze_file",
         "title": "Analyze file"
       },
@@ -92,6 +96,10 @@
       {
         "command": "extension.explorer_yosys-synth",
         "title": "Synthesize"
+      },
+      {
+        "command": "extension.explorer_place&route",
+        "title": "Place & Route"
       }
     ],
     "configuration": [
@@ -272,6 +280,10 @@
         {
           "command": "extension.editor_yosys-synth",
           "group": "ghdl_editor@6"
+        },
+        {
+          "command": "extension.editor_place&route",
+          "group": "ghdl_editor@7"
         }
       ],
       "explorer/context": [
@@ -311,6 +323,10 @@
         {
           "command": "extension.explorer_yosys-synth",
           "group": "ghdl_explorer@6"
+        },
+        {
+          "command": "extension.explorer_place&route",
+          "group": "ghdl_explorer@7"
         }
       ]
     },
@@ -392,6 +408,12 @@
         "key": "ctrl+alt+s",
         "mac": "shift+cmd+s",
         "linux": "shift+alt+s"
+      },
+      {
+        "command": "extension.explorer_place&route",
+        "key": "ctrl+alt+p",
+        "mac": "shift+cmd+p",
+        "linux": "shift+alt+p"
       }
     ],
     "languages": [

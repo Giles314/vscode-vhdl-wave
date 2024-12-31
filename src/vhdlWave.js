@@ -37,6 +37,7 @@ let textDecoder;
 const GHDL    = 'ghdl';
 const GTKWAVE = 'gtkwave';
 const YOSYS   = 'yosys';
+const P_R     = 'p_r';
 
 
 const { Settings, CommandTag, TOOLCHAIN_ENVVAR } = require('./Settings.js');
@@ -103,6 +104,7 @@ function activate(context) {
     const waveAsynCmd    = async (/** @type {{ fsPath: string; }} */ selectedFile) => { invokeGtkwave(selectedFile.fsPath); }
     
     const synthesizeAsynCmd  = async (/** @type {any} */ selectedFile) => { synthesizeProject(getSelectedFilePath(selectedFile)); }
+    const implementAsynCmd  = async (/** @type {any} */ selectedFile) => { implementProject(getSelectedFilePath(selectedFile)); }
 
     let disposableEditorAnalyze = vscode.commands.registerCommand('extension.editor_ghdl-analyze_file', analyzeAsyncCmd);
     let disposableExplorerAnalyze = vscode.commands.registerCommand('extension.explorer_ghdl-analyze_file', analyzeAsyncCmd);
@@ -143,6 +145,12 @@ function activate(context) {
 
     context.subscriptions.push(disposableEditorSynthesize); 
     context.subscriptions.push(disposableExplorerSynthesize);
+
+    let disposableEditorImplement = vscode.commands.registerCommand('extension.editor_place&route', implementAsynCmd);
+    let disposableExplorerImplement = vscode.commands.registerCommand('extension.explorer_place&route', implementAsynCmd);
+
+    context.subscriptions.push(disposableEditorImplement); 
+    context.subscriptions.push(disposableExplorerImplement);
 
 
     // Register an event listener for when a VHDL document is opened
@@ -286,6 +294,7 @@ async function ghdlOptions(command, filePath) {
         case CommandTag.run:          
         case CommandTag.make:
         case CommandTag.synth:
+        case CommandTag.implement:
             targetUnit = settings.unitName;
             break;
     }
@@ -294,6 +303,10 @@ async function ghdlOptions(command, filePath) {
         case CommandTag.synth :
             options.push(settings.get_project_source());
             options.push('-e');
+            break;
+        case CommandTag.implement :
+            options.push(settings.getSynthNetlistFilename(targetUnit))
+            options.push('-o');
             break;
         default:
     }
@@ -488,6 +501,27 @@ async function synthesizeProject(filePath) {
         const quotedParam = quotedList.join(' ');
         let paramList = ['-l', settings.getLogFilePath('synth.log'), '-p', quotedParam];
         await executeCommand(yosysToolPath, paramList, `Synthesize ${command.unit} completed`);
+    }
+}
+
+
+/*
+**Function: implementProject
+**usage: Implement the GateMate net list to produce FPGA configuration bit stream
+**parameter: path of the file that is the top module
+**return value(s): none
+*/
+/**
+ * @param {string} filePath
+ */
+async function implementProject(filePath) {
+    const p_rToolPath = await prepareToolChain(filePath, P_R);
+    if (p_rToolPath !== undefined) {
+        const command = await ghdlOptions(CommandTag.implement, filePath);
+        command.paramList.push( '-ccf');
+        const ccfFilename = filePath.replace(/\.[^/.]+$/, ".ccf");
+        command.paramList.push(ccfFilename);
+        await executeCommand(p_rToolPath, command.paramList, `Implementation of ${command.unit} completed`);
     }
 }
 
