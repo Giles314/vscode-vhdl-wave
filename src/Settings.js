@@ -37,6 +37,7 @@ const CommandTag = Object.freeze({
     "remove": '--remove',
     "wave": '-z',
     "synth": '--warn-no-binding -C --ieee=synopsys',
+    "implement": '-i',
 });
 
 const WAVE_EXT = 'ghw';
