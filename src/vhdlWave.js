@@ -38,6 +38,7 @@ const GHDL    = 'ghdl';
 const GTKWAVE = 'gtkwave';
 const YOSYS   = 'yosys';
 const P_R     = 'p_r';
+const FPGA_LOADER = 'openFPGALoader';
 
 
 const { Settings, CommandTag, TOOLCHAIN_ENVVAR } = require('./Settings.js');
@@ -104,7 +105,8 @@ function activate(context) {
     const waveAsynCmd    = async (/** @type {{ fsPath: string; }} */ selectedFile) => { invokeGtkwave(selectedFile.fsPath); }
     
     const synthesizeAsynCmd  = async (/** @type {any} */ selectedFile) => { synthesizeProject(getSelectedFilePath(selectedFile)); }
-    const implementAsynCmd  = async (/** @type {any} */ selectedFile) => { implementProject(getSelectedFilePath(selectedFile)); }
+    const implementAsynCmd   = async (/** @type {any} */ selectedFile) => { implementProject(getSelectedFilePath(selectedFile)); }
+    const loadFpgaAsynCmd    = async (/** @type {any} */ selectedFile) => { loadFpgaBitStream(getSelectedFilePath(selectedFile)); }
 
     let disposableEditorAnalyze = vscode.commands.registerCommand('extension.editor_ghdl-analyze_file', analyzeAsyncCmd);
     let disposableExplorerAnalyze = vscode.commands.registerCommand('extension.explorer_ghdl-analyze_file', analyzeAsyncCmd);
@@ -151,6 +153,12 @@ function activate(context) {
 
     context.subscriptions.push(disposableEditorImplement); 
     context.subscriptions.push(disposableExplorerImplement);
+
+    let disposableEditorLoadFpga = vscode.commands.registerCommand('extension.editor_load-FPGA', loadFpgaAsynCmd);
+    let disposableExplorerLoadFpga = vscode.commands.registerCommand('extension.explorer_load-FPGA', loadFpgaAsynCmd);
+
+    context.subscriptions.push(disposableEditorLoadFpga); 
+    context.subscriptions.push(disposableExplorerLoadFpga);
 
 
     // Register an event listener for when a VHDL document is opened
@@ -522,6 +530,25 @@ async function implementProject(filePath) {
         const ccfFilename = filePath.replace(/\.[^/.]+$/, ".ccf");
         command.paramList.push(ccfFilename);
         await executeCommand(p_rToolPath, command.paramList, `Implementation of ${command.unit} completed`);
+    }
+}
+
+
+/*
+**Function: loadFpgaBitStream
+**usage: Load the configuration bit stream into the GateMate FPGA
+**parameter: path of the file that is the top module
+**return value(s): none
+*/
+/**
+ * @param {string} filePath
+ */
+async function loadFpgaBitStream(filePath) {
+    const fpgaLoaderToolPath = await prepareToolChain(filePath, FPGA_LOADER);
+    if (fpgaLoaderToolPath !== undefined) {
+        const fpgaConfigBitStream = settings.unitName + '_00.cfg'; //-- File that contains the FPGA configuration bit stream
+        const loadInterfaceOptions = settings.getUploadInterfaceOptions().concat([fpgaConfigBitStream]);
+        await executeCommand(fpgaLoaderToolPath, loadInterfaceOptions, `Loading of ${settings.unitName} design configuration completed`);
     }
 }
 

@@ -9,6 +9,7 @@
 * #24 Improved packaging
 * #16 Add Yosys (+ GHDL) support to synthesize the VHDL design for GateMate FPGA (result in Verilog netlist)
 * #18 Add Place and Route for GateMate FGCA
+* #19 Add bit stream upload to GateMate FPGA
 * Known limitation: Though VHDL is case insensitive, its conversion in verilog requires that the top entity case matches its file case
   else Yosys will fail with ```ERROR: Module '<module-name-following-unit-file-case>' not found!```
 
