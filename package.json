@@ -70,6 +70,10 @@
         "title": "Place & Route"
       },
       {
+        "command": "extension.editor_load-FPGA",
+        "title": "Load FPGA"
+      },
+      {
         "command": "extension.explorer_ghdl-analyze_file",
         "title": "Analyze file"
       },
@@ -100,6 +104,10 @@
       {
         "command": "extension.explorer_place&route",
         "title": "Place & Route"
+      },
+      {
+        "command": "extension.explorer_load-FPGA",
+        "title": "Load FPGA"
       }
     ],
     "configuration": [
@@ -233,6 +241,20 @@
             "scope": "resource",
             "default": true,
             "description": "Allow generation of the vhdl-ls.toml file in the root directory of the workspace folder for use by extension VHDL-LS"
+          },
+          "vhdl-wave.toolChain.loadInterface": {
+            "type": "string",
+            "scope": "resource",
+            "default": "dirtyjtag-jtag-fpga",
+            "enum": [
+              "dirtyjtag-jtag-fpga",
+              "dirtyjtag-jtag-flash",
+              "gatemate-evb-jtag-fpga",
+              "gatemate-evb-spi-fpga",
+              "gatemate-evb-jtag-flash",
+              "gatemate-evb-spi-flash"
+            ],
+            "description": "Specifies the interface to use to load the bitstream into the FPGA or its flash memory"
           }
         }
       }
@@ -284,6 +306,10 @@
         {
           "command": "extension.editor_place&route",
           "group": "ghdl_editor@7"
+        },
+        {
+          "command": "extension.editor_load-FPGA",
+          "group": "ghdl_editor@8"
         }
       ],
       "explorer/context": [
@@ -327,6 +353,10 @@
         {
           "command": "extension.explorer_place&route",
           "group": "ghdl_explorer@7"
+        },
+        {
+          "command": "extension.explorer_load-FPGA",
+          "group": "ghdl_explorer@8"
         }
       ]
     },
@@ -414,6 +444,12 @@
         "key": "ctrl+alt+p",
         "mac": "shift+cmd+p",
         "linux": "shift+alt+p"
+      },
+      {
+        "command": "extension.explorer_load-FPGA",
+        "key": "ctrl+alt+f",
+        "mac": "shift+cmd+f",
+        "linux": "shift+alt+f"
       }
     ],
     "languages": [

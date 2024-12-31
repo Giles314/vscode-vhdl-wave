@@ -59,8 +59,18 @@ Check the example files from the GateMate tool chain package for syntax of this 
 
 ### OpenFPGALoader
 
-Not available yet.
+OpenFPGALoader is an open source software capable to upload a FPGA configuration through a FPGA or SPI interface and through several hardware and drivers managing this interface. In addition, the configuration may be loaded in the FPGA cache memory or in a flash memory. The effective configuration must be selected in the `Tool Chain: Load Interface` setting.
 
+At this stage only 6 configuration are supported and only one (the default) has been tested with corresponding hardware. Please give feedback if you have tested (successfuly or not) one of the untested options.
+
+| Option Name                   | Hardware Interface | Target | Target Interface | Status     |
+| ----------------------------- | ------------------ | ------ | ---------------- | ---------- |
+| dirtyjtag-jtag-fpga (default) | (pico-)dirtyjtag   | FPGA   | JTAG             | **Tested** |
+| dirtyjtag-jtag-flash          | (pico-)dirtyjtag   | Flash  | JTAG             | NOT Tested |
+| gatemate-evb-jtag-fpga        | GateMate EVB       | FPGA   | JTAG             | NOT Tested |
+| gatemate-evb-jtag-flash       | GateMate EVB       | Flash  | JTAG             | NOT Tested |
+| gatemate-evb-spi-fpga         | GateMate EVB       | FPGA   | SPI              | NOT Tested |
+| gatemate-evb-spi-flash        | GateMate EVB       | Flash  | SPI              | NOT Tested |
 
 ## Keybindings
 
@@ -75,6 +85,7 @@ It is also possible to invoke the GHDL functions via the following keybindings.
 | ghdl remove    | `ctrl + alt + d` | `shift + alt + d` | `shift + cmd + d` |
 | synthesize     | `ctrl + alt + s` | `shift + alt + s` | `shift + cmd + s` |
 | implement      | `ctrl + alt + i` | `shift + alt + i` | `shift + cmd + i` |
+| load FPGA      | `ctrl + alt + f` | `shift + alt + f` | `shift + cmd + f` |
 
 ## VHDL-LS
 

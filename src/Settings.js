@@ -42,7 +42,18 @@ const CommandTag = Object.freeze({
     "wave": '-z',
     "synth": '--warn-no-binding -C --ieee=synopsys',
     "implement": '-i',
+    "load": '',
 });
+
+
+const interface2Options = {
+    "dirtyjtag-jtag-fpga" : [ '-c', 'dirtyJtag' ],
+    "dirtyjtag-jtag-flash" : [ '-c', 'dirtyJtag', '-f' ],
+    "gatemate-evb-jtag-fpga" : [ '-b', 'gatemate_evb_jtag' ],
+    "gatemate-evb-spi-fpga" : [ '-b', 'gatemate_evb_spi' ],
+    "gatemate-evb-jtag-flash" : [ '-b', 'gatemate_evb_jtag', '-f' ],
+    "gatemate-evb-spi-flash" : [ '-b', 'gatemate_evb_spi', '-f' ],
+};
 
 const WAVE_EXT = 'ghw';
 
@@ -142,6 +153,12 @@ class Settings {
      */
     getSynthNetlistFilename(unit) {
         return `net/${unit}_synth.v`
+    }
+
+
+    getUploadInterfaceOptions() {
+        const loaderInterface = this.workspaceConfig.get("toolChain.loadInterface");
+        return interface2Options[loaderInterface];
     }
     
     
@@ -341,6 +358,9 @@ class Settings {
              * @type {string} netPath
              */
             this.netPath = path.join(this.buildPath, 'net');
+
+
+            this.interfaceType = this.workspaceConfig.get("toolChain.loadInterface");
         }
     }
 
