@@ -1,9 +1,9 @@
 {
   "name": "vhdl-wave",
-	"displayName": "VHDL-Wave",
-	"description": "VSCode extension for VHDL simulation with GHDL and GTKWave",
-	"publisher": "Giles314",
-  "version": "1.4.0",
+  "displayName": "VHDL-Wave",
+  "description": "VSCode extension for VHDL simulation with GHDL and GTKWave",
+  "publisher": "Giles314",
+  "version": "2.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/Giles314/vscode-vhdl-wave"
@@ -451,17 +451,17 @@
         "linux": "shift+alt+f"
       }
     ],
-		"languages": [
-			{
-				"id": "vhdl",
-				"extensions": [
-					".vhd",
-					".vhdl",
-					".VHD",
-					".VHDL"
-				]
-			}
-		]
+    "languages": [
+      {
+        "id": "vhdl",
+        "extensions": [
+          ".vhd",
+          ".vhdl",
+          ".VHD",
+          ".VHDL"
+        ]
+      }
+    ]
   },
   "scripts": {
     "lint": "eslint .",
