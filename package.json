@@ -3,7 +3,7 @@
 	"displayName": "VHDL-Wave",
 	"description": "VSCode extension for VHDL simulation with GHDL and GTKWave",
 	"publisher": "Giles314",
-  "version": "1.4.0",
+  "version": "2.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/Giles314/vscode-vhdl-wave"
