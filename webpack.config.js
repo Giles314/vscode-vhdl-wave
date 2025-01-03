@@ -8,6 +8,9 @@ const config = {
     output: {
         path: path.resolve(__dirname, 'dist'),
     },
+    externals: {
+        vscode: 'commonjs vscode',
+    },
     module: {
         rules: [
             {
@@ -20,15 +23,6 @@ const config = {
             // Learn more about loaders from https://webpack.js.org/loaders/
         ],
     },
-    resolve: { 
-        fallback: {
-            'path'   : false,
-            'fs'     : false,
-            'vscode' : false,
-            'child_process' : false,
-            'util'   : false,
-            'os'     : false,
-        },
-    },
+    target : 'node'
 };
 module.exports = config;

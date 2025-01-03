@@ -2,6 +2,10 @@
 
 ## VHDL-Wave
 
+### version 2.0.0
+
+* #24 Improved packaging
+
 ### version 1.4.0
 
 * #15 Improve usability of Clean/Remove commands.
