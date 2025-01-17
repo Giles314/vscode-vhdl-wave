@@ -53,7 +53,6 @@ class Settings {
 
     constructor(vscode) {
         this.vscode = vscode;
-        this.workspaceConfig = this.vscode.workspace.getConfiguration(this.getExtensionId());
         this.defaultWorkLibraryName = 'work';
     }
 
@@ -88,6 +87,8 @@ class Settings {
      * @returns {Promise<void>}
      */
     async refresh(filePath = undefined) {
+
+        this.workspaceConfig = this.vscode.workspace.getConfiguration(this.getExtensionId());
 
         /**
          * @type {string} workspaceOverride
