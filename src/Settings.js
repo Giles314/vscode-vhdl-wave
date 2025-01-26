@@ -25,6 +25,7 @@
 
 const fs     = require('fs');
 const path   = require('path');
+const whichSync  = require('./util/which.js'); // extracted from https://www.npmjs.com/package/which
 
 const CommandTag = Object.freeze({
     "analyze":'-a',
@@ -47,12 +48,46 @@ const ghwDialogOptions = {
 };
 
 const defaultWorkLibNameInVhdlLs = "defaultLibrary";
+    
+
+/**
+ * @param {string} exe
+ * @returns {string}
+ */
+function whichPath (exe, vscode) {
+    const found = whichSync(exe, { nothrow: true });
+    if (found) {
+        if (Array.isArray(found)) {
+            vscode.window.showErrorMessage(`Found several ${exe} in PATH environment variable. Will use first.`);
+            return found[0];
+        }
+        else {
+            return found;
+        }
+    }
+    else {
+        vscode.window.showErrorMessage(`Cannot find ${exe}. Add path of the ${exe} directory to your PATH environment variable.`);
+        return exe;
+    }
+}
 
 
 class Settings {
 
     constructor(vscode) {
         this.vscode = vscode;
+
+        /**
+         * @type {string} ghdlPath
+         */
+        this.ghdlPath = whichPath('ghdl', vscode);
+        /**
+         * @type {string} wavePath
+         */
+        this.wavePath = whichPath('gtkwave', vscode);
+        /**
+         * @type {string} defaultWorkLibraryName
+         */
         this.defaultWorkLibraryName = 'work';
     }
 
@@ -66,18 +101,18 @@ class Settings {
         this.workLibDir = this.workspaceOverride['WorkLibraryPath'];
         if (! this.workLibDir) {
             this.workLibDir = this.workspaceConfig.get("library.WorkLibraryPath");
-        }
+            }
         if((this.workLibDir == "") || (this.workLibDir == null)) {
             this.workLibDir = "";
         }
         else {
             if (! path.isAbsolute(this.workLibDir)) {
                 this.workLibDir = path.join(this.dirPath, this.workLibDir);
-            }
+    }
             if(! fs.existsSync(this.workLibDir)) {
                 // Include the path inside a list to indicate it does not exists
                 this.workLibDir = [ this.workLibDir ];
-            }
+    }
         }
     }
 
@@ -157,8 +192,8 @@ class Settings {
             }
             else if (this.workLibDirPath != "") {
                 if (! path.isAbsolute(this.workLibDirPath)) {
-                    this.workLibDirPath = path.join(this.dirPath, this.workLibDirPath);
-                }
+                this.workLibDirPath = path.join(this.dirPath, this.workLibDirPath);
+            }
                 if(! fs.existsSync(this.workLibDirPath)) {
                     // Include the path inside a list to indicate it does not exists
                     this.isWorkLibDirExists = false;
@@ -225,14 +260,14 @@ class Settings {
             }
         }
 
-        /**
-         * @type {string[]} commonOptions
-         */
-        this.commonOptions = [];
-    }
+            /**
+             * @type {string[]} commonOptions
+             */
+            this.commonOptions = [];
+            }
 
 
-    /**
+            /**
      * Compute the given command parameter list(s)
      * - First list (used by most tasks)
      * - Second list (used only by the run task)

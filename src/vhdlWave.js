@@ -24,7 +24,7 @@
 const vscode    = require('vscode');
 const { spawn } = require('child_process');
 const LsTomlWriter = require('./LsTomlWriter.js')
-const path   = require('path'); 
+const path   = require('path');
 const { TextDecoder } = require('util');
 
 
@@ -38,7 +38,7 @@ const GHDL    = 'ghdl';
 const GTKWAVE = 'gtkwave';
 
 const { Settings, CommandTag } = require('./Settings.js');
-  
+
 const settings = new Settings(vscode)
 
 /*Function: getSelectedFilePath
@@ -224,7 +224,7 @@ async function executeCommand(command, args, successMessage, continueLog = false
         spawnProcess.stderr.on('end', () => { endOfError = true; checkTermination(); } );
         spawnProcess.stdout.on('end', () => { endOfOutput = true; checkTermination(); } );
         spawnProcess.on('close', (rc) => { endOfCommand = true; returnCode = rc; checkTermination(); } );
-
+        spawnProcess.on('error', (err) => { outputChannel.appendLine(`\nFailed running ${command} in ${settings.buildPath} with error:\n${err}`); });
     });
 
     await executionPromise.then(
@@ -301,7 +301,7 @@ async function analyzeFile(filePath) {
     if (await prepareCommand(filePath)) {
         LsTomlWriter.createUpdateTomlFile(vscode, settings, GHDL, filePath);
         const command = await ghdlOptions(CommandTag.analyze, filePath);
-        await executeCommand(GHDL, command.paramList, path.basename(filePath) + ' analyzed without errors');
+        await executeCommand(settings.ghdlPath, command.paramList, path.basename(filePath) + ' analyzed without errors');
     }
 }
 
@@ -318,7 +318,7 @@ async function analyzeFile(filePath) {
 async function elaborateFiles(filePath) {
     if (await prepareCommand(filePath)) {
         const command = await ghdlOptions(CommandTag.elaborate, filePath);
-        await executeCommand(GHDL, command.paramList, command.unit + ' elaborated without errors');
+        await executeCommand(settings.ghdlPath, command.paramList, command.unit + ' elaborated without errors');
     }
 }
 
@@ -336,7 +336,7 @@ async function runUnit(filePath) {
     if (await prepareCommand(filePath)) {
         try {
             const command = await ghdlOptions(CommandTag.run, filePath);
-            await executeCommand(GHDL, command.paramList, command.unit + ': Simulation completed');
+            await executeCommand(settings.ghdlPath, command.paramList, command.unit + ': Simulation completed');
         }
         catch (err) {
             vscode.window.showWarningMessage("Run: " + err);		
@@ -358,10 +358,10 @@ async function makeUnit(filePath) {
     if (await prepareCommand(filePath)) {
         try {
                 let command = await ghdlOptions(CommandTag.make, filePath);
-                const success = await executeCommand(GHDL, command.paramList, `Make ${command.unit} completed. Running simulation...`);
+                const success = await executeCommand(settings.ghdlPath, command.paramList, `Make ${command.unit} completed. Running simulation...`);
                 if (success) {
                     command = await ghdlOptions(CommandTag.run, filePath);
-                    await executeCommand(GHDL, command.paramList, 'Simulation completed', /*continueLog*/true);
+                    await executeCommand(settings.ghdlPath, command.paramList, 'Simulation completed', /*continueLog*/true);
                 }
         }
         catch (err) {
@@ -392,7 +392,7 @@ async function removeGeneratedFiles(filePath) {
         
         if (answer == buttonText) {
             const command = await ghdlOptions(CommandTag.remove, filePath);
-            executeCommand(GHDL, command.paramList, 'Library and generated files removed');
+            executeCommand(settings.ghdlPath, command.paramList, 'Library and generated files removed');
         }
         else {
             vscode.window.showInformationMessage('Command cancelled.');
@@ -413,7 +413,7 @@ async function removeGeneratedFiles(filePath) {
 async function invokeGtkwave(filePath) {
     if (await prepareCommand(filePath)) {
         const command = await ghdlOptions(CommandTag.wave, filePath);
-        executeCommand(GTKWAVE, command.paramList, 'GTKWave completed');
+        executeCommand(settings.wavePath, command.paramList, 'GTKWave completed');
     }
 }
 
