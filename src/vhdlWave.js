@@ -24,7 +24,7 @@
 const vscode    = require('vscode');
 const { spawn } = require('child_process');
 const LsTomlWriter = require('./LsTomlWriter.js')
-const path   = require('path'); 
+const path   = require('path');
 const { TextDecoder } = require('util');
 
 
@@ -38,7 +38,7 @@ const GHDL    = 'ghdl';
 const GTKWAVE = 'gtkwave';
 
 const { Settings, CommandTag } = require('./Settings.js');
-  
+
 const settings = new Settings(vscode)
 
 /*Function: getSelectedFilePath
@@ -224,7 +224,7 @@ async function executeCommand(command, args, successMessage, continueLog = false
         spawnProcess.stderr.on('end', () => { endOfError = true; checkTermination(); } );
         spawnProcess.stdout.on('end', () => { endOfOutput = true; checkTermination(); } );
         spawnProcess.on('close', (rc) => { endOfCommand = true; returnCode = rc; checkTermination(); } );
-
+        spawnProcess.on('error', (err) => { outputChannel.appendLine(`\nFailed running ${command} with error:\n${err}`); });
     });
 
     await executionPromise.then(

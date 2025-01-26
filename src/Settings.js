@@ -25,6 +25,7 @@
 
 const fs     = require('fs');
 const path   = require('path');
+const whichSync  = require('./util/which.js'); // extracted from https://www.npmjs.com/package/which
 
 const CommandTag = Object.freeze({
     "analyze":'-a',
@@ -47,12 +48,21 @@ const ghwDialogOptions = {
 };
 
 const defaultWorkLibNameInVhdlLs = "defaultLibrary";
-
+    
 
 class Settings {
 
     constructor(vscode) {
         this.vscode = vscode;
+
+        if (! whichSync('ghdl', { nothrow: true })) {
+            this.vscode.window.showErrorMessage('Cannot find ghdl. Add path of the ghdl directory to your PATH environment variable.');
+        }
+
+        if (! whichSync('gtkwave', { nothrow: true })) {
+            this.vscode.window.showWarningMessage('Cannot find GTKwave. Add path to the gtkwave directory to your PATH environment variable.');
+        }
+
         this.defaultWorkLibraryName = 'work';
     }
 
@@ -66,18 +76,18 @@ class Settings {
         this.workLibDir = this.workspaceOverride['WorkLibraryPath'];
         if (! this.workLibDir) {
             this.workLibDir = this.workspaceConfig.get("library.WorkLibraryPath");
-        }
+            }
         if((this.workLibDir == "") || (this.workLibDir == null)) {
             this.workLibDir = "";
         }
         else {
             if (! path.isAbsolute(this.workLibDir)) {
                 this.workLibDir = path.join(this.dirPath, this.workLibDir);
-            }
+    }
             if(! fs.existsSync(this.workLibDir)) {
                 // Include the path inside a list to indicate it does not exists
                 this.workLibDir = [ this.workLibDir ];
-            }
+    }
         }
     }
 
@@ -157,8 +167,8 @@ class Settings {
             }
             else if (this.workLibDirPath != "") {
                 if (! path.isAbsolute(this.workLibDirPath)) {
-                    this.workLibDirPath = path.join(this.dirPath, this.workLibDirPath);
-                }
+                this.workLibDirPath = path.join(this.dirPath, this.workLibDirPath);
+            }
                 if(! fs.existsSync(this.workLibDirPath)) {
                     // Include the path inside a list to indicate it does not exists
                     this.isWorkLibDirExists = false;
@@ -225,14 +235,14 @@ class Settings {
             }
         }
 
-        /**
-         * @type {string[]} commonOptions
-         */
-        this.commonOptions = [];
-    }
+            /**
+             * @type {string[]} commonOptions
+             */
+            this.commonOptions = [];
+            }
 
 
-    /**
+            /**
      * Compute the given command parameter list(s)
      * - First list (used by most tasks)
      * - Second list (used only by the run task)

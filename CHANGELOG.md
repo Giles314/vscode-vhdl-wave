@@ -5,6 +5,7 @@
 ### version 2.0.0
 
 * #22 Fix setup changes not taken into account
+* #23 Raise error when GHDL or GTKWave are not found
 * #24 Improved packaging
 
 ### version 1.4.0
