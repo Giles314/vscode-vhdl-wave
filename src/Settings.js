@@ -26,8 +26,7 @@
 const fs     = require('fs');
 const path   = require('path');
 const { MiniGlob } = require('./util/miniglob.js');
-
-const whichSync  = require('./util/which.js'); // extracted from https://www.npmjs.com/package/which
+const dir = require('./dir.js');
 
 
 const TOOLCHAIN_ENVVAR = 'GATEMATE_TOOLCHAIN_PATH';
@@ -55,42 +54,9 @@ const interface2Options = {
     "gatemate-evb-spi-flash" : [ '-b', 'gatemate_evb_spi', '-f' ],
 };
 
-const WAVE_EXT = 'ghw';
-
-const ghwDialogOptions = {
-	canSelectMany: false,
-	openLabel: 'Open',
-	filters: {
-	   '${WAVE_EXT} files': [ WAVE_EXT ]
-   }
-};
-
 
 const defaultWorkLibNameInVhdlLs = "defaultLibrary";
     
-
-/**
- * @param {string} dirPath
- * @param {string} explainName
- * @returns {boolean}
- */
-function createDir(dirPath, explainName) {
-    let result = true;
-    try {
-        fs.accessSync(dirPath, fs.constants.F_OK);
-    } 
-    catch (err) {
-        try {
-            fs.mkdirSync(dirPath, 0o744);
-        }
-        catch(err) {
-            console.log(`Failed to create ${explainName} directory at ${dirPath}`);
-            result = false;
-        }
-    }
-    return result;
-}
-
 
 class Settings {
 
@@ -100,11 +66,11 @@ class Settings {
         /**
          * @type {string} ghdlPath
          */
-        this.ghdlPath = whichPath('ghdl', vscode);
+        this.ghdlPath = dir.whichPath('ghdl', vscode);
         /**
          * @type {string} wavePath
          */
-        this.wavePath = whichPath('gtkwave', vscode);
+        this.wavePath = dir.whichPath('gtkwave', vscode);
         /**
          * @type {string} defaultWorkLibraryName
          */
@@ -121,7 +87,7 @@ class Settings {
         let toolPath = undefined;
         const toolchainDir = process.env[TOOLCHAIN_ENVVAR];
         if (toolchainDir !== undefined) {
-            const execName = process.platform === 'win32' ? toolName + '.exe' : toolName;
+            const execName = (process.platform === 'win32') ? (toolName + '.exe') : toolName;
             toolPath = path.join(toolchainDir, toolName, execName).toString();
             if (!fs.existsSync(toolPath)) {
                 toolPath = undefined;
@@ -138,8 +104,8 @@ class Settings {
 
 
     makeSubDirs()  {
-        const result = createDir(this.logPath, 'log')
-                     && createDir(this.netPath, 'net');
+        const result = dir.createDir(this.logPath, 'log')
+                     && dir.createDir(this.netPath, 'net');
         if (!result) {
             this.vscode.window.showErrorMessage('Failed to create log or net sub-directories in build directory');
         }
@@ -258,10 +224,7 @@ class Settings {
             /**
              * @type {string} workLibDirPath
              */
-            this.workLibDirPath = this.workspaceOverride['WorkLibraryPath'];
-            if (this.workLibDirPath === undefined) {
-                this.workLibDirPath = this.workspaceConfig.get("library.WorkLibraryPath");
-            }
+            this.workLibDirPath = this.workspaceConfig.get("library.WorkLibraryPath");
             if ((this.workLibDirPath == null) || (this.workLibDirPath == '')) {
                 this.workLibDirPath = this.buildPath;
                 mustCreateBuildDir = true;
@@ -274,62 +237,24 @@ class Settings {
             /**
              * @type {string} workLibName
              */
-            this.workLibName = this.workspaceOverride['WorkLibraryName'];
-            if (!this.workLibName) {
-                this.workLibName = this.workspaceConfig.get('library.WorkLibraryName');
-            }
+            this.workLibName = this.workspaceConfig.get('library.WorkLibraryName');
             if (this.workLibName == this.defaultWorkLibraryName) {
                 // Use empty name instead of explicit default name to avoid returning synonyms
                 this.workLibName = '';
             }
 
 
-            const libPaths = this.workspaceConfig.get('library.LibraryDirectories');
-            if (libPaths != '') {
-                for(const libPath of libPaths) {
-                    if(fs.existsSync(libPath)) {
-                        this.libraryPaths.push(libPath);
-                    } else {
-                        this.vscode.window.showInformationMessage(`Specified path of external library '${libPath}' not found, ignoring argument. Check value in extension settings`);
-                    }
-                }
-            }
+            /**
+             * @type {string[]} libraryPaths
+             */
+            this.libraryPaths = dir.absoluteList(this.workspaceConfig.get('library.LibraryDirectories'), this.dirPath, this.vscode);
 
             
             /**
-             * @type {string} cmdOption
+             * @type {string} defaultWaveFile
              */
-            this.waveFile = this.workspaceConfig.get("simulation.WaveFile");
-            if (this.waveFile != '') {
-                if (! path.isAbsolute(this.waveFile)) {
-                    this.waveFile = path.join(this.dirPath, this.waveFile);
-                }
-                let isDirectory;
-                try {
-                    const stats = fs.statSync(this.waveFile);
-                    isDirectory = stats.isDirectory();
-                }
-                catch(err) {
-                    switch (this.waveFile.slice(-1)) {
-                        case '/':
-                        case '\\':
-                            isDirectory = true;
-                        default:
-                            isDirectory = false;
-                    }
-                }
-                if (isDirectory) {
-                    // Add a filename which has the run module name with extension .ghw
-                    this.waveFile = path.join(this.waveFile, this.unitName.toLowerCase() + '.' + WAVE_EXT);
-                }
-                else {
-                    const extPos = this.waveFile.lastIndexOf(".");
-                    if (extPos < this.waveFile.length - 5) { //-- maximum length of extension: 4 characters
-                        // The name has no extension add '.ghw'
-                        this.waveFile += '.' + WAVE_EXT;
-                    }
-                }
-            }
+            this.defaultWaveFile = this.workspaceConfig.get("simulation.WaveFile");
+
 
             /**
              * @type {string[]} commonOptions
@@ -338,9 +263,10 @@ class Settings {
 
 
             if (mustCreateBuildDir)  {
-                result = createDir(this.buildPath, 'build');
+                result = dir.createDir(this.buildPath, 'build');
                 this.isToolChainDirExists = result;
             }
+
 
             if(fs.existsSync(this.workLibDirPath)) {
                 this.isWorkLibDirExists = true;
@@ -484,16 +410,7 @@ class Settings {
      * @returns {Promise<string>}
      */
     async getWaveFile() {
-        if (this.waveFile == '') {
-            const fileInfos = await this.vscode.window.showSaveDialog(ghwDialogOptions);
-            if (fileInfos) {
-                this.waveFile = path.normalize(fileInfos.fsPath);
-            }
-            else {
-                throw "Command cancelled";
-            }
-        }
-        return this.waveFile;
+        return dir.getWaveFilename(this.defaultWaveFile, this.buildPath, this.dirPath, this.unitName);
     }
 
 

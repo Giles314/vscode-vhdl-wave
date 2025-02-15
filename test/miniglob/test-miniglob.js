@@ -38,9 +38,10 @@ if (isPlatformCaseSensitive) {
 		it('Includes dirL1-?/fileL1-1-1.xxx with ? wildcard in dir name.', () => {
 			const myGlob = new MiniGlob(path.join(baseDirPath, 'dirL1-?/fileL1-1-1.xxx'));
 			const fileList = myGlob.getMatchingPaths();
-			strictEqual(fileList.length, 2);
+			strictEqual(fileList.length, 3);
 			strictEqual(fileList[0], pathOf('dirL1-1/fileL1-1-1.xxx'));
 			strictEqual(fileList[1], pathOf('dirL1-2/fileL1-1-1.xxx'));
+			strictEqual(fileList[2], pathOf('dirL1-3/fileL1-1-1.xxx'));
 		});
 
 		it('Includes dirL1-?/fileL1-1-2.xxx with ? wildcard in dir name, with maching directory without matching file.', () => {
@@ -53,9 +54,10 @@ if (isPlatformCaseSensitive) {
 		it('Includes dirL*/fileL1-1-1.xxx with * wildcard in dir name.', () => {
 			const myGlob = new MiniGlob(path.join(baseDirPath, 'dirL*/fileL1-1-1.xxx'));
 			const fileList = myGlob.getMatchingPaths();
-			strictEqual(fileList.length, 2);
+			strictEqual(fileList.length, 3);
 			strictEqual(fileList[0], pathOf('dirL1-1/fileL1-1-1.xxx'));
 			strictEqual(fileList[1], pathOf('dirL1-2/fileL1-1-1.xxx'));
+			strictEqual(fileList[2], pathOf('dirL1-3/fileL1-1-1.xxx'));
 		});
 
 		it('Includes dirL1-1/fil*.xxx with * wildcard in file name.', () => {
@@ -79,35 +81,38 @@ if (isPlatformCaseSensitive) {
 		it('Includes ./**/*1.xxx with ** wildcard (and * wildcard inside file name)', () => {
 			const myGlob = new MiniGlob(path.join(baseDirPath, './**/*1.xxx'));
 			const fileList = myGlob.getMatchingPaths();
-			strictEqual(fileList.length, 6);
+			strictEqual(fileList.length, 7);
 			strictEqual(fileList[0], pathOf('./x1.xxx'));
 			strictEqual(fileList[1], pathOf('dirL1-1/fileL1-1-1.xxx'));
 			strictEqual(fileList[2], pathOf('dirL1-2/fileL1-1-1.xxx'));
 			strictEqual(fileList[3], pathOf('dirL1-2/dirL2-1/fileL2-1-1.xxx'));
 			strictEqual(fileList[4], pathOf('dirL1-2/dirL2-1+/fileL2-1-1.xxx'));
 			strictEqual(fileList[5], pathOf('dirL1-2/dirL2-2/fileL2-2-1.xxx'));
+			strictEqual(fileList[6], pathOf('dirL1-3/fileL1-1-1.xxx'));
 		});
 
 		it('Includes ./*/**/*1.xxx with */** wildcard (and * wildcard inside file name)', () => {
 			const myGlob = new MiniGlob(path.join(baseDirPath, './*/**/*1.xxx'));
 			const fileList = myGlob.getMatchingPaths();
-			strictEqual(fileList.length, 5);
+			strictEqual(fileList.length, 6);
 			strictEqual(fileList[0], pathOf('dirL1-1/fileL1-1-1.xxx'));
 			strictEqual(fileList[1], pathOf('dirL1-2/fileL1-1-1.xxx'));
 			strictEqual(fileList[2], pathOf('dirL1-2/dirL2-1/fileL2-1-1.xxx'));
 			strictEqual(fileList[3], pathOf('dirL1-2/dirL2-1+/fileL2-1-1.xxx'));
 			strictEqual(fileList[4], pathOf('dirL1-2/dirL2-2/fileL2-2-1.xxx'));
+			strictEqual(fileList[5], pathOf('dirL1-3/fileL1-1-1.xxx'));
 		});
 
 		it('Includes ./**/*/*1.xxx with **/* wildcard (and * wildcard inside file name)', () => {
 			const myGlob = new MiniGlob(path.join(baseDirPath, './**/*/*1.xxx'));
 			const fileList = myGlob.getMatchingPaths();
-			strictEqual(fileList.length, 5);
+			strictEqual(fileList.length, 6);
 			strictEqual(fileList[0], pathOf('dirL1-1/fileL1-1-1.xxx'));
 			strictEqual(fileList[1], pathOf('dirL1-2/fileL1-1-1.xxx'));
 			strictEqual(fileList[2], pathOf('dirL1-2/dirL2-1/fileL2-1-1.xxx'));
 			strictEqual(fileList[3], pathOf('dirL1-2/dirL2-1+/fileL2-1-1.xxx'));
 			strictEqual(fileList[4], pathOf('dirL1-2/dirL2-2/fileL2-2-1.xxx'));
+			strictEqual(fileList[5], pathOf('dirL1-3/fileL1-1-1.xxx'));
 		});
 
 		it('Includes ./**/dirL<1-2|2-1>/*.xxx with <> wildcard in directory', () => {
@@ -161,9 +166,10 @@ else {
 		it('Includes DIRl1-?/FILEl1-1-1.xxx with ? wildcard in dir name. Inverted case in dir and filename', () => {
 			const myGlob = new MiniGlob(path.join(baseDirPath, 'DIRl1-?/FILEl1-1-1.xxx'));
 			const fileList = myGlob.getMatchingPaths();
-			strictEqual(fileList.length, 2);
+			strictEqual(fileList.length, 3);
 			strictEqual(fileList[0].toUpperCase(), pathOf('dirL1-1/fileL1-1-1.xxx'));
 			strictEqual(fileList[1].toUpperCase(), pathOf('dirL1-2/fileL1-1-1.xxx'));
+			strictEqual(fileList[2].toUpperCase(), pathOf('dirL1-3/fileL1-1-1.xxx'));
 		});
 
 		it('Includes dirL1-?/fileL1-1-2.XXX with ? wildcard in dir name, with maching directory without matching file. wrong upcase on extension', () => {
@@ -176,9 +182,10 @@ else {
 		it('Includes DIRl*/fileL1-1-1.xxx with * wildcard in dir name. Inverted case in dir name', () => {
 			const myGlob = new MiniGlob(path.join(baseDirPath, 'DIRl*/fileL1-1-1.xxx'));
 			const fileList = myGlob.getMatchingPaths();
-			strictEqual(fileList.length, 2);
+			strictEqual(fileList.length, 3);
 			strictEqual(fileList[0].toUpperCase(), pathOf('dirL1-1/fileL1-1-1.xxx'));
 			strictEqual(fileList[1].toUpperCase(), pathOf('dirL1-2/fileL1-1-1.xxx'));
+			strictEqual(fileList[2].toUpperCase(), pathOf('dirL1-3/fileL1-1-1.xxx'));
 		});
 
 		it('Includes dirL1-1/fil*.xxx with * wildcard in file name. Wrong upcase extension', () => {
@@ -202,35 +209,38 @@ else {
 		it('Includes ./**/*1.xxx with ** wildcard (and * wildcard inside file name) wrong case in filename', () => {
 			const myGlob = new MiniGlob(path.join(baseDirPath, './**/*1.xXX'));
 			const fileList = myGlob.getMatchingPaths();
-			strictEqual(fileList.length, 6);
+			strictEqual(fileList.length, 7);
 			strictEqual(fileList[0].toUpperCase(), pathOf('./x1.xxx'));
 			strictEqual(fileList[1].toUpperCase(), pathOf('dirL1-1/fileL1-1-1.xxx'));
 			strictEqual(fileList[2].toUpperCase(), pathOf('dirL1-2/fileL1-1-1.xxx'));
 			strictEqual(fileList[3].toUpperCase(), pathOf('dirL1-2/dirL2-1/fileL2-1-1.xxx'));
 			strictEqual(fileList[4].toUpperCase(), pathOf('dirL1-2/dirL2-1+/fileL2-1-1.xxx'));
 			strictEqual(fileList[5].toUpperCase(), pathOf('dirL1-2/dirL2-2/fileL2-2-1.xxx'));
+			strictEqual(fileList[6].toUpperCase(), pathOf('dirL1-3/fileL1-1-1.xxx'));
 		});
 
 		it('Includes ./*/**/*1.xxx with */** wildcard (and * wildcard inside file name)', () => {
 			const myGlob = new MiniGlob(path.join(baseDirPath, './*/**/*1.XXX'));
 			const fileList = myGlob.getMatchingPaths();
-			strictEqual(fileList.length, 5);
+			strictEqual(fileList.length, 6);
 			strictEqual(fileList[0].toUpperCase(), pathOf('dirL1-1/fileL1-1-1.xxx'));
 			strictEqual(fileList[1].toUpperCase(), pathOf('dirL1-2/fileL1-1-1.xxx'));
 			strictEqual(fileList[2].toUpperCase(), pathOf('dirL1-2/dirL2-1/fileL2-1-1.xxx'));
 			strictEqual(fileList[3].toUpperCase(), pathOf('dirL1-2/dirL2-1+/fileL2-1-1.xxx'));
 			strictEqual(fileList[4].toUpperCase(), pathOf('dirL1-2/dirL2-2/fileL2-2-1.xxx'));
+			strictEqual(fileList[5].toUpperCase(), pathOf('dirL1-3/fileL1-1-1.xxx'));
 		});
 
 		it('Includes ./**/*/F*1.xxx with **/* wildcard (and * wildcard inside file name)', () => {
 			const myGlob = new MiniGlob(path.join(baseDirPath, './**/*/F*1.xxx'));
 			const fileList = myGlob.getMatchingPaths();
-			strictEqual(fileList.length, 5);
+			strictEqual(fileList.length, 6);
 			strictEqual(fileList[0].toUpperCase(), pathOf('dirL1-1/fileL1-1-1.xxx'));
 			strictEqual(fileList[1].toUpperCase(), pathOf('dirL1-2/fileL1-1-1.xxx'));
 			strictEqual(fileList[2].toUpperCase(), pathOf('dirL1-2/dirL2-1/fileL2-1-1.xxx'));
 			strictEqual(fileList[3].toUpperCase(), pathOf('dirL1-2/dirL2-1+/fileL2-1-1.xxx'));
 			strictEqual(fileList[4].toUpperCase(), pathOf('dirL1-2/dirL2-2/fileL2-2-1.xxx'));
+			strictEqual(fileList[5].toUpperCase(), pathOf('dirL1-3/fileL1-1-1.xxx'));
 		});
 
 		it('Includes ./**/dirL<1-2|2-1>/*.xxx with <> wildcard in directory. with wrong case in and out alternative', () => {
@@ -264,7 +274,7 @@ else {
 describe('miniglob-unmatches', () => {
 
 	it('Includes ./**/unmatched* with wildcard matching no file', () => {
-		const myGlob = new MiniGlob(path.join(baseDirPath, './**/fileL*<1-2.|2-1>*xxx'));
+		const myGlob = new MiniGlob(path.join(baseDirPath, './**/unmatched*'));
 		const fileList = myGlob.getMatchingPaths();
 		strictEqual(fileList.length, 0);
 	});

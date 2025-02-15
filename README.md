@@ -13,19 +13,22 @@ You will need to have [GHDL](https://github.com/ghdl/ghdl/releases) and [GTKWave
 
 At present it is possible to invoke the following GHDL functions by either right-clicking at the editor or at the explorer on the specific file and then selecting the desired funtion.
 
-| Editor Option  | GHDL Function                  |
-| -------------- | :----------------------------- |
-| ghdl analyze   | `ghdl -a [File]`               |
-| ghdl elaborate | `ghdl -e [Unit]`               |
-| ghdl run       | `ghdl -r [Unit] [export file]` |
-| ghdl make      | `ghdl -m [unit]` (+ run if OK) |
-| ghdl remove    | `ghdl --remove`                |
+| Editor Option    | GHDL Function                  |
+| ---------------- | :----------------------------- |
+| GHDL > Analyze   | `ghdl -a [File]`               |
+| GHDL > Elaborate | `ghdl -e [Unit]`               |
+| GHDL > Run       | `ghdl -r [Unit] [export file]` |
+| GHDL > Make      | `ghdl -m [unit]` (+ run if OK) |
+| GHDL > Remove    | `ghdl --remove`                |
 
-In addition to that the GHDL analyze function offers you error highlighting in the editor.
+The log of these commands is displayed in the `OUTPUT` panel. When `analyze` displays syntax errors,
+clicking on the error location line number in the `OUTPUT` brings your cursor to the error location in your source file.
+
+The `GHDL > Run` and `GHDL > Make` commands produce a Wave file (suffix .ghw). Its name and location are determined by `Wave Dir Path` setting (see details in paragraph `Directories from Setting` below).
 
 ### GTKWave
 
-To open your simulation files with GTKWave, simply right-click on them (.ghw or .vcd file required) in the explorer and then select `gtkwave`
+To open your simulation files with GTKWave, simply right-click on them (.ghw or .vcd file required) in the explorer and then select `GTKWave`.
 
 ## Cologne Chip GateMate Tool Chain _(new in V2.0)_
 
@@ -100,24 +103,64 @@ When a library is added to the configuration (setting `Library Directories`) thi
 
 These library files are then parsed to find the corresponding source files which are then added to `vhdl-ls.toml` file.
 
-## `vhdl-wave.json` file
+## VHDL-Wave Directories
 
-The file `.vscode/vhdl-wave.json` in the workspace folder allows overriding the following settings: `Work Library Name` and `Work Library Path`.
+### Directories from Setting
 
-The aim is to allow switching easily between library development and main application development.
+Several directories must be configured in VHDL-Wave settings:
 
-The standard development takes place in the `work` library which is the default _VHDL-Wave_ setting. But when you develop a library you must name the working library with the target library name. And you may want to place it in a particular place where you locate your libraries.
+`Build Root Path`: This directory will contain all the files produced  
+by the gateway toolchain, the generated GTKWave files
+and by default is the place where the GHDL library
+is created
 
-By defining specific library name and location in `vhdl-wave.json` file of the library development folder you will allow to use the right parameters as soon you enter the library development folder with vscode.
+`Work Library Path`: This directory will contain the GHDL library
+(it is not the directory that is the GHDL library but it contains it).
+By default (when left empty) this directory is the `Build Root Path`.
 
-The typical content of `vhdl-wave.json` file to develop a library `myCustomLibrary` is:
+`Library Directories`: When your design refers to a non-standard library that
+has been built outside of your projet, GHDL must be aware of the directory where to find it.
+This is the role of each entry of this list of directories.
+Like for `Work Library Path` the directories in this list are not library directories
+but directories that contain library directories.
+Each directory may contain several libraries,
+either the same one built for various language versions
+or several different libraries built for the same language version (or a mix).
 
-```JSON
-{ 
-    "WorkLibraryPath": "/mylibrary/rootpath/" ,
-    "WorkLibraryName": "myCustomLibrary"
-}
-```
+`Wave Dir Path`: This parameter is used to determine the directory path of the Wave file produced by `GHDL > Run` or `GHDL > Make` commands.
+If left empty, the directory path defaults to the `Build Root Path`.
+Note that the generated file is named like the run TOP unit with a `.ghw` extension.
+
+> All these paths may be specified in absolute or relative way.
+Relative paths are relative to the workspace directory.
+
+### Directories from Environment Variables
+
+VHDL-Wave will use other directories that are not defined in settings:
+It will search PATH environment variable for the directories that contains
+the binaries for GHDL and GTKWave.
+
+It will also used the variable `GATEMATE_TOOLCHAIN_PATH` to locate the directory that contains the GateMate tool chain binaries. See above more details about this.
+
+### Building and using Custom Libraries
+
+When building a custom library set your `Work Library Path` at the place where you expect your library to be stored.
+
+Avoid to leave the `Work Library Path` in the build directory (default value) as you probably don't want your library to be deleted when cleaning the build directory.
+
+Set your library name in parameter settings `Work Library Name`.
+
+When using your library from another project, you may use default build directory, and keep your working library in it, keeping also its default `work` name by leaving `Work Library Path`, `Work Library Name` and `Build Root Path` empty.
+
+But you will add the library directory path (the value of `Work Library Path` settings when you were building the cutom library) to the list of `Library Directories`.
+
+And of course in the units using the custom library you will add the following line:
+
+`library <the-library-name>`
+
+where `<the-library-name>` is the value of the setting `Work Library Name` when you were building the library.
+
+> Because your settings are different between the library building workspace and the library using workspace, it is recommended to set settings per workspace and avoid user settings that are identical for all workspaces.
 
 ## Contributions
 

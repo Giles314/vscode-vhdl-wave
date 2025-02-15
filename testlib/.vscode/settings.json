@@ -1,0 +1,4 @@
+{
+	"vhdl-wave.library.WorkLibraryPath": "./libs",
+	"vhdl-wave.library.WorkLibraryName": "basic_comp"
+}

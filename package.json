@@ -108,6 +108,10 @@
       {
         "command": "extension.explorer_load-FPGA",
         "title": "Load FPGA"
+      },
+      {
+        "command": "extension.create_build_dir",
+        "title": "Create VHDL build directory"
       }
     ],
     "configuration": [
@@ -124,7 +128,7 @@
             "type": "string",
             "scope": "resource",
             "default": "",
-            "description": "Specifies the directory where the tool chain generated files will be stored. This directory will also be used to store synthesis results. This directory will be created automatically. Paths relative to the project folder are allowed and recommended. Set to the 'build' directory if left blank. Use './' for the project folder."
+            "description": "Specifies the directory where the generated files will be stored. Paths relative to the project folder are allowed and recommended. Set to the './build' directory if left blank. It should not contain any source file."
           },
           "vhdl-wave.library.WorkLibraryPath": {
             "type": "string",
@@ -142,11 +146,11 @@
             "format": "uri",
             "description": "Specifies the directory paths where GHDL searchs for '.cf' library files (not used if left blank)"
           },
-          "vhdl-wave.simulation.WaveFile": {
+          "vhdl-wave.simulation.WaveDirPath": {
             "type": "string",
             "scope": "resource",
             "default": "",
-            "description": "Specifies the file or directory to use to store simulation results. When left empty user is requested to pick one. When a directory is specified, a file named as the compiled unit and suffixed '.ghw' will be used. A file name without extension will be suffixed '.ghw'. Relative paths are accepted."
+            "description": "Specifies the directory to use to store simulation results. When empty, default to BuildRootPath. Relative paths from workspace root directory are accepted."
           },
           "vhdl-wave.simulation.TimeResolution": {
             "type": "string",
@@ -272,8 +276,13 @@
     "menus": {
       "editor/context": [
         {
-          "when": "resourceExtname == .vhdl || resourceExtname == .vhd || resourceExtname == .vht",
+          "when": "isValidBuildDir && (resourceExtname == .vhdl || resourceExtname == .vhd || resourceExtname == .vht)",
           "submenu": "ghdl.editor_submenu",
+          "group": "1_modification@2"
+        },
+        {
+          "when": "! isValidBuildDir",
+          "command": "extension.create_build_dir",
           "group": "1_modification@2"
         }
       ],
@@ -314,14 +323,19 @@
       ],
       "explorer/context": [
         {
-          "when": "resourceExtname == .vhdl || resourceExtname == .vhd || resourceExtname == .vht",
+          "when": "isValidBuildDir && (resourceExtname == .vhdl || resourceExtname == .vhd || resourceExtname == .vht)",
           "submenu": "ghdl.explorer_submenu",
           "group": "7_modification@3"
         },
         {
-          "when": "resourceExtname == .ghw || resourceExtname == .vcd",
+          "when": "isValidBuildDir && (resourceExtname == .ghw || resourceExtname == .vcd)",
           "command": "extension.explorer_gtkwave",
           "group": "7_modification@4"
+        },
+        {
+          "when": "! isValidBuildDir",
+          "command": "extension.create_build_dir",
+          "group": "7_modification@3"
         }
       ],
       "ghdl.explorer_submenu": [
@@ -477,6 +491,7 @@
     "vsce": "vsce package"
   },
   "dependencies": {
+    "mocha": "^11.1.0",
     "webpack": "^5.97.1"
   },
   "devDependencies": {

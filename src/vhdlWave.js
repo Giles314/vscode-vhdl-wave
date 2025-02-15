@@ -160,6 +160,10 @@ function activate(context) {
     context.subscriptions.push(disposableEditorLoadFpga); 
     context.subscriptions.push(disposableExplorerLoadFpga);
 
+    let disposableCreateBuildDir = vscode.commands.registerCommand('extension.create_build_dir', createBuildDirAsynCmd);
+
+    context.subscriptions.push(disposableCreateBuildDir); 
+
 
     // Register an event listener for when a VHDL document is opened
     vscode.workspace.onDidOpenTextDocument((document) => {
@@ -179,10 +183,31 @@ function activate(context) {
     });
 
     settings.refresh().then(() => {
+        if (! settings.isBuildDirValid) {
+            vscode.window.showWarningMessage('The build directory does not exist. GHDL commands are unavailable.')
+        }
         LsTomlWriter.createUpdateTomlFile(vscode, settings, GHDL);
         console.log('VHDL-Wave now active!'); // log extension start
     });
 }
+
+
+const createBuildDirMsgPart1 = 'You need a build directory to use VHDL-Wave tools. The current settings locate this directory at:\n';
+const createBuildDirMsgPart2 = '\nwhich does not exist yet. Do you want to create it?';
+const createBuildDirYes = 'Yes, create';
+const createBuildDirNo = 'No, I will make it later';
+
+async function createBuildDirAsynCmd () {
+    const confirmation = await vscode.window.showInformationMessage(
+        createBuildDirMsgPart1 + settings.buildPath + createBuildDirMsgPart2,
+        createBuildDirYes,
+        createBuildDirNo
+    );
+    if (confirmation === createBuildDirYes) {
+        settings.createBuildDir();
+    }
+}
+
 
 function deactivate() {
     if (outputChannel) {
@@ -333,7 +358,7 @@ async function prepareCommand(filePath) {
     await settings.refresh(filePath);
     const isValidContext = settings.isWorkLibDirExists;
     if (!isValidContext) {
-        vscode.window.showErrorMessage(`Path of library 'WORK' not found. Create '${settings.workLibDirPath}' or check value in extension settings or in .vscode/.vhdl-ware.js`);
+        vscode.window.showErrorMessage(`Path of work library not found. Create '${settings.workLibDirPath}' or check value of VHDL-Wave WorkLibraryPath settings`);
     }
     return isValidContext;
 }
@@ -432,7 +457,7 @@ async function makeUnit(filePath) {
                 }
         }
         catch (err) {
-            vscode.window.showWarningMessage("Run: " + err);		
+            vscode.window.showWarningMessage("Make: " + err);		
         }
     }
 }
