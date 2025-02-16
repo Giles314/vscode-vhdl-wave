@@ -7,6 +7,8 @@ This extension allows you to invoke GHDL functions, as well as GTKWave to perfor
 
 You will need to have [GHDL](https://github.com/ghdl/ghdl/releases) and [GTKWave](http://gtkwave.sourceforge.net/) installed on your system. Furthermore both must be set in your environment variables.
 
+You also need Cologne Chip GateMate Tool Chain to synthetize for this FPGA. Refer to the corresponding paragraph below for more details.
+
 ## Usage
 
 ### GHDL
@@ -110,9 +112,18 @@ These library files are then parsed to find the corresponding source files which
 Several directories must be configured in VHDL-Wave settings:
 
 `Build Root Path`: This directory will contain all the files produced  
-by the gateway toolchain, the generated GTKWave files
-and by default is the place where the GHDL library
-is created
+by the gateway toolchain, the default GTKWave files generation location
+and the default place where the GHDL library is created.
+By defauit this directory is located below the workspace root
+and is called `build`.
+
+The build directory content should not be kept in configuration management.
+Add an entry in `.gitignore` file to exclude this directory.
+
+> This directory must exist to run VHDL-wave tool commands.
+So if this directory cannot be found none of the VHDL-wave tool commands
+are available, instead a special command to create the directory is provided.
+Once the directory is created the tool commands become available.
 
 `Work Library Path`: This directory will contain the GHDL library
 (it is not the directory that is the GHDL library but it contains it).

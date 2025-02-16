@@ -207,18 +207,15 @@ class Settings {
             }
 
 
+            let isBuildDirValid;
+            let buildPath;
+            [buildPath, isBuildDirValid] = dir.getBuildDir(this.workspaceConfig.get['library.BuildRootPath'], this.dirPath);
             /**
              * @type {string} buildPath
              */
-            this.buildPath = this.workspaceConfig.get['library.BuildRootPath'];
-            if (! this.buildPath) {
-                this.buildPath = path.join(this.dirPath, 'build');
-            }
-            else {
-                if (! path.isAbsolute(this.buildPath)) {
-                    this.buildPath = path.join(this.dirPath, this.buildPath);
-                }
-            }
+            this.buildPath = buildPath;
+            this.isBuildDirValid = isBuildDirValid;
+            this.vscode.commands.executeCommand('setContext', 'isValidBuildDir', isBuildDirValid);
 
 
             /**
@@ -559,6 +556,17 @@ class Settings {
      */
     isEnableLsToml() {
         return this.workspaceConfig.get("general.enableLsToml");
+    }
+
+
+    createBuildDir () {
+        const success = dir.createDir(this.buildPath, "build");
+        if (success) {
+            this.refresh();
+        }
+        else {
+            this.vscode.showErrorMessage("Failed to create build directory at: " + this.buildPath);
+        }
     }
 
 

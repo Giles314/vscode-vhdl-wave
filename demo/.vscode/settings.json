@@ -1,0 +1,5 @@
+{
+	"vhdl-wave.library.LibraryDirectories": [
+		"../testlib/libs/"
+	]
+}
