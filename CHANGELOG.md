@@ -4,6 +4,8 @@
 
 ### version 2.0.0
 
+* #26 Add build directory command to replace other commands when build directory is missing
+* #25 Remove vhdl-wave.json file because its function was duplicate of .vscode/settings.json file
 * #22 Fix setup changes not taken into account
 * #23 Raise error when GHDL or GTKWave are not found
 * #24 Improved packaging
