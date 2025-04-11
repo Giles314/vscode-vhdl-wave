@@ -54,6 +54,7 @@ const interface2Options = {
     "gatemate-evb-spi-flash" : [ '-b', 'gatemate_evb_spi', '-f' ],
 };
 
+const vhdlExtPattern = /\.vhdl?$/i;
 
 const defaultWorkLibNameInVhdlLs = "defaultLibrary";
     
@@ -63,18 +64,41 @@ class Settings {
     constructor(vscode) {
         this.vscode = vscode;
 
+        this.outputChannel = null;
+
         /**
          * @type {string} ghdlPath
          */
-        this.ghdlPath = dir.whichPath('ghdl', vscode);
+        this.ghdlPath = '';
         /**
          * @type {string} wavePath
          */
-        this.wavePath = dir.whichPath('gtkwave', vscode);
+        this.wavePath = '';
+        /**
+         * @type {boolean} isToolsMissing
+         */
+        this.isToolsMissing = false;
         /**
          * @type {string} defaultWorkLibraryName
          */
         this.defaultWorkLibraryName = 'work';
+        /**
+         * @type {boolean} isActive
+         */
+        this.isActive = false;
+        /**
+         * @type {string} folderPath
+         */
+        this.folderPath = '';
+        /**
+         * @type {boolean} isVhdlFolder
+         */
+        this.isVhdlFolder = false;
+    }
+
+
+    setOutput(outputChannel) {
+        this.outputChannel = outputChannel;
     }
 
 
@@ -113,6 +137,7 @@ class Settings {
     }
 
 
+
     /**
      * @param {string} unit
      * @returns {string}
@@ -134,33 +159,43 @@ class Settings {
      */
     async refresh(filePath = undefined, mustCreateBuildDir = false) {
 
+        this.outputChannel.append("Reload config\n");
         this.workspaceConfig = this.vscode.workspace.getConfiguration(this.getExtensionId());
 
-        /**
-         * @type {string} workspaceOverride
-         */
-        this.dirPath = '';
         const folders = this.vscode.workspace.workspaceFolders;
-        if (folders !== undefined) {
+        this.isActive = (folders !== undefined);
+        if (this.isActive) {
             // Get path of workspace root directory
             // where the GHDL command must be run by default
-            this.dirPath = folders[0].uri.fsPath;
+            this.folderPath = folders[0].uri.fsPath;
+            this.outputChannel.append(`Workspace directory: '${this.folderPath}'\n`);
         }
 
+        if (!this.isVhdlFolder) {
+            let vhdlFile = filePath
+            if (! vhdlFile)
+            {
+                vhdlFile =this.vscode.workspace.textDocuments.map(doc => doc.fileName).filter(filename => vhdlExtPattern.test(filename))
+                vhdlFile = vhdlFile[0];
+            }
+            if (vhdlFile) {
+                // When a file is passed as a parameter this means that this is a VHDL folder
+                this.isVhdlFolder = true;
+                this.outputChannel.append(`Opening VHDL file '${vhdlFile}': Folder is VHDL\n`);
+            }
+        } 
+
         /**
+         * Name and extension of the source file target of the current command
          * @type {string} baseName
          */
         this.baseName = '';
 
         /**
+         * Root of the name of the source file target of the current command
          * @type {string} unitName
          */
         this.unitName = '';
-
-        /**
-         * @type {{}} workspaceOverride
-         */
-        this.workspaceOverride = {};
 
         /**
          * @type {boolean} isWorkLibDirExists
@@ -177,45 +212,50 @@ class Settings {
          */
         this.libraryPaths = [];
 
-        let pattern = './src/**/*.vhd';
-            if (! path.isAbsolute(pattern)) {
-            pattern = path.join(this.dirPath, pattern).replace(/\\/g, '/');
-            }
-
-            /**
-             * @type {string[]} includeCoreSourceFiles
-             */
-            this.includeCoreSourceFiles = [ pattern, pattern + 'l' ];
-
         /**
          * @type {string[]} cmdOption
          */
         this.cmdOption = [];
 
-        let result = (this.dirPath != '');
-        if (result) {
+        if (this.isActive) {
+            let pattern = './src/**/*.vhd<l|>';  // VHDL sources in Gatemate project. TO DO: allow to modify it
+            if (! path.isAbsolute(pattern)) {
+                pattern = path.join(this.folderPath, pattern).replace(/\\/g, '/');
+                this.outputChannel.append(`Source file pattern=${pattern}\n`);
+            }
+
+            /**
+             * @type {string[]} includeCoreSourceFiles
+             */
+            this.includeCoreSourceFiles = [ pattern ];
+
+            if (!this.isVhdlFolder && this.get_project_source()) {
+                this.outputChannel.append(`Source file matching pattern found: Folder is VHDL\n`);
+                this.isVhdlFolder = true;
+            }
+
             if (filePath !== undefined) {
+                // We are managing a command built from a filename give in filePath
+                // get this filename parts
                 this.baseName = path.basename(filePath);
                 this.unitName = this.baseName.substring(0, this.baseName.lastIndexOf("."));
             }
 
-            const overrideFilePath = path.join(this.dirPath, '.vscode', 'vhdl-wave.json');
-
-            if (fs.existsSync(overrideFilePath)) {
-                const data = fs.readFileSync(overrideFilePath, { encoding: 'utf8',} );
-                this.workspaceOverride = JSON.parse(data);
-            }
-
-
             let isBuildDirValid;
             let buildPath;
-            [buildPath, isBuildDirValid] = dir.getBuildDir(this.workspaceConfig.get['library.BuildRootPath'], this.folderPath);
+            [buildPath, isBuildDirValid] = dir.getBuildDir(this.workspaceConfig.get('library.BuildRootPath'), this.folderPath);
             /**
              * @type {string} buildPath
              */
             this.buildPath = buildPath;
+            this.outputChannel.append(`Build path=${this.buildPath}\n`);
+
+            /**
+             * @type {boolean} isBuildDirValid
+             */
             this.isBuildDirValid = isBuildDirValid;
             this.vscode.commands.executeCommand('setContext', 'isValidBuildDir', isBuildDirValid);
+            this.outputChannel.append(`Build dir exists=${isBuildDirValid} enable GHDL/Gatemate commands accordingly\n`);
 
 
             /**
@@ -223,12 +263,14 @@ class Settings {
              */
             this.workLibDirPath = this.workspaceConfig.get("library.WorkLibraryPath");
             if ((this.workLibDirPath == null) || (this.workLibDirPath == '')) {
+                // The work library path is not defined:
+                // Use the build directory to store the working library 
                 this.workLibDirPath = this.buildPath;
-                mustCreateBuildDir = true;
             }
             else if (! path.isAbsolute(this.workLibDirPath)) {
-                this.workLibDirPath = path.join(this.dirPath, this.workLibDirPath);
+                this.workLibDirPath = path.join(this.folderPath, this.workLibDirPath);
             }
+            this.outputChannel.append(`Working library parent directory=${this.workLibDirPath}\n`);
 
 
             /**
@@ -239,12 +281,13 @@ class Settings {
                 // Use empty name instead of explicit default name to avoid returning synonyms
                 this.workLibName = '';
             }
+            this.outputChannel.append(`Working library name='${this.workLibName}'\n`);
 
 
             /**
              * @type {string[]} libraryPaths
              */
-            this.libraryPaths = dir.absoluteList(this.workspaceConfig.get('library.LibraryDirectories'), this.dirPath, this.vscode);
+            this.libraryPaths = dir.absoluteList(this.workspaceConfig.get('library.LibraryDirectories'), this.folderPath, this.vscode);
 
             
             /**
@@ -259,17 +302,11 @@ class Settings {
             this.commonOptions = [];
 
 
-            if (mustCreateBuildDir)  {
-                result = dir.createDir(this.buildPath, 'build');
-                this.isToolChainDirExists = result;
-            }
-
-
             if(fs.existsSync(this.workLibDirPath)) {
                 this.isWorkLibDirExists = true;
             }
 
-        if (result) {
+            if (this.isBuildDirValid) {
                 /**
                  * @type {string} logPath
                  */
@@ -284,7 +321,17 @@ class Settings {
 
                 this.interfaceType = this.workspaceConfig.get("toolChain.loadInterface");
             }
+
+            // Define the ghdl and gtkwave path.
+            // This needs to be done only once and only when we are in a VHDL environment
+            if (!this.isToolsMissing && !this.ghdlPath && filePath) {
+                this.ghdlPath = dir.whichPath('ghdl', this.vscode);
+                this.wavePath = dir.whichPath('gtkwave', this.vscode);
+                this.isToolsMissing = !this.ghdlPath;  // Remember we have tried and that this has failed
             }
+        }
+
+    }
 
 
     /**
@@ -406,7 +453,7 @@ class Settings {
      * @returns {Promise<string>}
      */
     async getWaveFile() {
-        return dir.getWaveFilename(this.defaultWaveFile, this.buildPath, this.dirPath, this.unitName);
+        return dir.getWaveFilename(this.defaultWaveFile, this.buildPath, this.folderPath, this.unitName);
     }
 
 

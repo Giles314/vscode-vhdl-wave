@@ -78,17 +78,10 @@ function getToolPath(tool) {
 }
 
 
-// this method is called when vs code is activated
 /**
  * @param {vscode.ExtensionContext} context
  */
-function activate(context) {
-
-    if (!outputChannel)
-        outputChannel = vscode.window.createOutputChannel('GHDL Output');
-    if (!textDecoder)
-        textDecoder = new TextDecoder;
-
+function createMenu(context) {
     //-- Asynchronous functions to process commands
     const analyzeAsyncCmd = async (/** @type {any} */ selectedFile) => {
         await vscode.window.activeTextEditor.document.save(); //save open file before analyzing it
@@ -170,24 +163,57 @@ function activate(context) {
         // Check the file type
         if (document.languageId === 'vhdl') {
             // Check whether this file is listed in vhdl source files
-            LsTomlWriter.createUpdateTomlFile(vscode, settings, GHDL, document.uri.fsPath);
+            if (!settings.isVhdlFolder) {
+                settings.isVhdlFolder = true; 
+                outputChannel.append(`First VHDL file open. Creating TOML file\n`);
+            }
+            LsTomlWriter.createUpdateTomlFile(vscode, settings, GHDL, document.uri.fsPath); 
         }
     });
 
     vscode.workspace.onDidChangeWorkspaceFolders((event) => {
-        event.added.forEach(folder => {
-          console.log(`Folder open: ${folder.uri.fsPath}`);
-          // Check whether it is possible to list VHDL files in this folder
-          LsTomlWriter.createUpdateTomlFile(vscode, settings, GHDL);
+        settings.isVhdlFolder = false;
+        settings.isActive     = false;
+        settings.refresh().then(() => {
+            if (settings.isActive && settings.isVhdlFolder) {
+                LsTomlWriter.createUpdateTomlFile(vscode, settings, GHDL);
+            }
         });
     });
 
+}
+
+
+// this method is called when vs code is activated
+/**
+ * @param {vscode.ExtensionContext} context
+ */
+function activate(context) {
+
+    if (!outputChannel)
+        outputChannel = vscode.window.createOutputChannel('GHDL Output');
+    if (!textDecoder)
+        textDecoder = new TextDecoder;
+
+    settings.setOutput(outputChannel);
+    outputChannel.append("Activation\n");
+
     settings.refresh().then(() => {
-        if (! settings.isBuildDirValid) {
-            vscode.window.showWarningMessage('The build directory does not exist. GHDL commands are unavailable.')
+        createMenu(context);
+        if (! settings.isActive) {
+            outputChannel.append(`No working folder defined: VHDL-wave is disabled\n`);
         }
-        LsTomlWriter.createUpdateTomlFile(vscode, settings, GHDL);
-        console.log('VHDL-Wave now active!'); // log extension start
+        if (!settings.isVhdlFolder) {
+            outputChannel.append(`No VHDL file: VHDL-wave is disabled\n`);
+        }
+        else {
+            if (! settings.isBuildDirValid) {
+                vscode.window.showWarningMessage('The build directory does not exist. GHDL commands are unavailable.')
+            }
+            outputChannel.append("VHDL folder create/update TOML file\n");
+            LsTomlWriter.createUpdateTomlFile(vscode, settings, GHDL);
+            console.log('VHDL-Wave now active!'); // log extension start
+        }
     });
 }
 

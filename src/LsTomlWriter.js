@@ -292,7 +292,7 @@ async function updateTomlFile(workspaceDir, standard, workLibIndex, libraryFileL
  * @param {any} vscode
  * @param {{ refresh: (arg0: string) => Promise<void>;
  *           getParameters: (arg0: string) => Promise<string[][]>;
- *           dirPath: string;
+ *           folderPath: string;
  *           unitName : string;
  *           isWorkLibDirExists: boolean;
  *           workLibDirPath: string;
@@ -308,7 +308,7 @@ async function updateTomlFile(workspaceDir, standard, workLibIndex, libraryFileL
  */
 async function createUpdateTomlFile(vscode, settings, ghdl, openFile) {
     let status = { message: '', severity: SUCCESS_OK };
-    const workspaceDir = settings.dirPath;
+    const workspaceDir = settings.folderPath;
     if ((workspaceDir != '') && settings.isEnableLsToml()) {
         const standard          = ghdlToLsStandardAndYear[settings.getVhdlStandard()];
         const libraryFileLists  = {};
