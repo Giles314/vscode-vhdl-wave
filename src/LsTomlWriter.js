@@ -308,39 +308,39 @@ async function updateTomlFile(workspaceDir, standard, workLibIndex, libraryFileL
  */
 async function createUpdateTomlFile(vscode, settings, ghdl, openFile) {
     let status = { message: '', severity: SUCCESS_OK };
-    try {
-        const workspaceDir = settings.dirPath;
-        if ((workspaceDir != '') && settings.isEnableLsToml()) {
-            const standard          = ghdlToLsStandardAndYear[settings.getVhdlStandard()];
-            const libraryFileLists  = {};
-            let workLibIndex = await settings.listWorkLibFiles(libraryFileLists);
-            if (! openFile) {
-                //-- If no file is provided check whether the edited file is a GHDL file
-                openFile = getOpenVhdlFile(vscode);
+    const workspaceDir = settings.dirPath;
+    if ((workspaceDir != '') && settings.isEnableLsToml()) {
+        const standard          = ghdlToLsStandardAndYear[settings.getVhdlStandard()];
+        const libraryFileLists  = {};
+        const workLibIndex = await settings.listWorkLibFiles(libraryFileLists);
+        if (! openFile) {
+            //-- If no file is provided check whether the edited file is a GHDL file
+            openFile = getOpenVhdlFile(vscode);
+        }
+        //-- If a file has been given or found, it may already be
+        //-- included in the work library we have listed above
+        if (openFile) {
+            //-- Though if the work library does not exist yet
+            //-- we will need to create it (empty) first
+            if (libraryFileLists[workLibIndex] === undefined) {
+                libraryFileLists[workLibIndex] = [];
             }
-            //-- If a file has been given or found, it may already be
-            //-- included in the work library we have listed above
-            if (openFile) {
-                //-- Though if the work library does not exist yet
-                //-- we will need to create it (empty) first
-                if (libraryFileLists[workLibIndex] === undefined) {
-                    libraryFileLists[workLibIndex] = [];
-                }
-                const workLibFiles = libraryFileLists[workLibIndex];
-                if (! workLibFiles.includes(openFile)) {
-                    workLibFiles.push(openFile);
-                }
+            const workLibFiles = libraryFileLists[workLibIndex];
+            if (! workLibFiles.includes(openFile)) {
+                workLibFiles.push(openFile);
             }
-            settings.listPDirList(libraryFileLists);
+        }
+        settings.listPDirList(libraryFileLists);
 
+        try {
             status = await updateTomlFile(workspaceDir, standard, workLibIndex, libraryFileLists);
         }
-    }
-    catch(error) {
-        status =  { message: error, severity: SUCCESS_ERROR };
+        catch(error) {
+            status =  { message: error, severity: SUCCESS_ERROR };
+        }
     }
 
-    if (status.message == '') {
+    if (status.message != '') {
         let displayMessage;
         switch (status.severity) {
             case SUCCESS_ERROR :

@@ -178,14 +178,14 @@ class Settings {
         this.libraryPaths = [];
 
         let pattern = './src/**/*.vhd';
-        if (! path.isAbsolute(pattern)) {
+            if (! path.isAbsolute(pattern)) {
             pattern = path.join(this.dirPath, pattern).replace(/\\/g, '/');
-        }
+            }
 
-        /**
-         * @type {string[]} includeCoreSourceFiles
-         */
-        this.includeCoreSourceFiles = [ pattern, pattern + 'l' ];
+            /**
+             * @type {string[]} includeCoreSourceFiles
+             */
+            this.includeCoreSourceFiles = [ pattern, pattern + 'l' ];
 
         /**
          * @type {string[]} cmdOption
@@ -209,7 +209,7 @@ class Settings {
 
             let isBuildDirValid;
             let buildPath;
-            [buildPath, isBuildDirValid] = dir.getBuildDir(this.workspaceConfig.get['library.BuildRootPath'], this.dirPath);
+            [buildPath, isBuildDirValid] = dir.getBuildDir(this.workspaceConfig.get['library.BuildRootPath'], this.folderPath);
             /**
              * @type {string} buildPath
              */
@@ -268,24 +268,23 @@ class Settings {
             if(fs.existsSync(this.workLibDirPath)) {
                 this.isWorkLibDirExists = true;
             }
-        }
 
         if (result) {
-            /**
-             * @type {string} logPath
-             */
-            this.logPath = path.join(this.buildPath, 'log');
+                /**
+                 * @type {string} logPath
+                 */
+                this.logPath = path.join(this.buildPath, 'log');
 
 
-            /**
-             * @type {string} netPath
-             */
-            this.netPath = path.join(this.buildPath, 'net');
+                /**
+                 * @type {string} netPath
+                 */
+                this.netPath = path.join(this.buildPath, 'net');
 
 
-            this.interfaceType = this.workspaceConfig.get("toolChain.loadInterface");
-        }
-    }
+                this.interfaceType = this.workspaceConfig.get("toolChain.loadInterface");
+            }
+            }
 
 
     /**
@@ -293,10 +292,10 @@ class Settings {
      * - First list (used by most tasks)
      * - Second list (used only by the run task)
      *
-     * Do NOT call if (this.dirPath == '')
-     * Note that (this.dirPath == '') means that no workspace folder is defined
+     * Do NOT call if not this.isActive
+     * Note that this.isActive means that no workspace folder is defined
      * Because workspace is necessary for VHDL-Wave to manage its files
-     * VHDL will do nothing when (this.dirPath == '')
+     * VHDL will do nothing when not this.isActive
      *
      * @param {string} [command]
      * @returns {Promise<string[][]>}
@@ -304,7 +303,7 @@ class Settings {
     async getParameters(command) {
         let settingsList  = [];
         let runOptionList = [];
-        if (this.dirPath != '') {
+        if (this.isActive) {
             switch (command) {
             case CommandTag.run:
                 runOptionList= [].concat(await this.getWaveFileRunOption() ,
@@ -651,8 +650,6 @@ class Settings {
             }  // Read line
         }
         catch (err) {
-            const errorMessage = "Error reading library file " + libraryPath + " :\n" + err.toString();
-            throw errorMessage;
         }
     }
     
