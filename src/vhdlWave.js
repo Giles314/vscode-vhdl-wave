@@ -258,20 +258,13 @@ function decodeDataToOutputChannel(data) {
     outputChannel.append(textDecoder.decode(data.buffer));
 }
 
-/*
-**Function: executeCommand
-**usage: invoke the given command in given dirPath unless dirPath is null
-**parameters: 
-** - Command to execute; 
-** - Directory where to execute the command; 
-** - Message to display in case of success.
-**return value: none
-*/
+
 /**
- * @param {string} command
- * @param {string[]} args
- * @param {string} successMessage
- * @param {boolean} continueLog
+ *Function: executeCommand
+ * @param {string} command        Command to execute
+ * @param {string[]} args         list of command arguments
+ * @param {string} successMessage Message to display in case of success.
+ * @param {boolean} continueLog   Flag to keep previous log instead of clearing log before running command
  */
 async function executeCommand(command, args, successMessage, continueLog = false) {
     let result = false;
@@ -326,19 +319,11 @@ async function executeCommand(command, args, successMessage, continueLog = false
 }
 
 
-/*
-**Function: ghdlOptions
-**usage: invokes ghdl to analyze file from filePath parameter
-**parameter:
-** - The executable command
-** - The command options list
-** - The target filename
-** - The list of run options
-**return value: none
-*/
 /**
- * @param {string} command
- * @param {string} filePath
+ *Function: ghdlOptions
+ * Assemble ghdl options corresponding to given command
+ * @param {string} command     The executable command
+ * @param {string} filePath    The target filename
  * @returns {Promise<{paramList:string[], unit:string}>}
  */
 async function ghdlOptions(command, filePath) {
@@ -406,14 +391,9 @@ async function prepareToolChain(filePath, tool) {
 
 //=========================================== Command functions ===========================================
 
-/*
-**Function: analyzeFile
-**usage: invokes ghdl to analyze file from filePath parameter
-**parameter: path of the file to analyze
-**return value: none
-*/
 /**
- * @param {string} filePath
+ * Analyse given VHDL file using GHDL
+ * @param {string} filePath path of the file to analyze
  */
 async function analyzeFile(filePath) {
     if (await prepareCommand(filePath)) {
@@ -427,11 +407,13 @@ async function analyzeFile(filePath) {
 /*
 **Function: elaborateFiles
 **usage: elaborates the unit of the analyzed vhdl source file
-**parameter: path of the file that was analyzed
+**parameter:
 **return value(s): none
 */
 /**
- * @param {string} filePath
+ * Elaborates the unit of the given VHDL source file
+ *  (that should have been analyzed before)
+ * @param {string} filePath path of the file that was analyzed
  */
 async function elaborateFiles(filePath) {
     if (await prepareCommand(filePath)) {
@@ -441,14 +423,9 @@ async function elaborateFiles(filePath) {
 }
 
 
-/*
-**Function: runUnit
-**usage: runs the testbench unit and exports to ghw file 
-**parameter: path of the file that was analyzed
-**return value(s): none
-*/
 /**
- * @param {string} filePath
+ * Runs the testbench unit and produces the GHW file
+ * @param {string} filePath path of the file that was analyzed
  */
 async function runUnit(filePath) {
     if (await prepareCommand(filePath)) {
@@ -463,14 +440,9 @@ async function runUnit(filePath) {
 }
 
 
-/*
-**Function: makeUnit
-**usage: make the testbench unit and exports to ghw file 
-**parameter: path of the file that was analyzed
-**return value(s): none
-*/
 /**
- * @param {string} filePath
+ * Make the testbench unit and produce the GHW file 
+ * @param {string} filePath path of the file of the top unit that was analyzed
  */
 async function makeUnit(filePath) {
     if (await prepareCommand(filePath)) {
@@ -489,14 +461,9 @@ async function makeUnit(filePath) {
 }
 
 
-/*
-**Function: removeGeneratedFiles
-**usage: removes generated object files and library file
-**parameter: none
-**return value(s): none
- */
 /**
- * @param {string} filePath
+ *  Removes generated object files and library file
+ * @param {string} filePath top unit filename
  */
 async function removeGeneratedFiles(filePath) {
     if (await prepareCommand(filePath)) {
@@ -519,14 +486,9 @@ async function removeGeneratedFiles(filePath) {
 }
 
 
-/*
-**Function: invokeGtkwave
-**usage: opens selected file in Gtkwave 
-**parameter: filePath
-**return value(s): none
- */
 /**
- * @param {string} filePath
+ *  Opens selected file in Gtkwave 
+ * @param {string} filePath Path of the GHW file to open
  */
 async function invokeGtkwave(filePath) {
     if (await prepareCommand(filePath)) {
@@ -536,14 +498,9 @@ async function invokeGtkwave(filePath) {
 }
 
 
-/*
-**Function: synthesizeProject
-**usage: Synthesize the project using Yosys to produce a net list from VHDL source files 
-**parameter: path of the file that is the top module
-**return value(s): none
-*/
 /**
- * @param {string} filePath
+ *  Synthesize the project using Yosys to produce a net list from VHDL source files 
+ * @param {string} filePath path of the file that is the top module
  */
 async function synthesizeProject(filePath) {
     const yosysToolPath = await prepareToolChain(filePath, YOSYS);
@@ -564,14 +521,9 @@ async function synthesizeProject(filePath) {
 }
 
 
-/*
-**Function: implementProject
-**usage: Implement the GateMate net list to produce FPGA configuration bit stream
-**parameter: path of the file that is the top module
-**return value(s): none
-*/
 /**
- * @param {string} filePath
+ *  Implement the GateMate net list to produce FPGA configuration bit stream
+ * @param {string} filePath path of the file that is the top module
  */
 async function implementProject(filePath) {
     const p_rToolPath = await prepareToolChain(filePath, P_R);
@@ -585,14 +537,9 @@ async function implementProject(filePath) {
 }
 
 
-/*
-**Function: loadFpgaBitStream
-**usage: Load the configuration bit stream into the GateMate FPGA
-**parameter: path of the file that is the top module
-**return value(s): none
-*/
 /**
- * @param {string} filePath
+ *  Load the configuration bit stream into the GateMate FPGA
+ * @param {string} filePath path of the file that is the top module
  */
 async function loadFpgaBitStream(filePath) {
     const fpgaLoaderToolPath = await prepareToolChain(filePath, FPGA_LOADER);

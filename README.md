@@ -9,6 +9,11 @@ You will need to have [GHDL](https://github.com/ghdl/ghdl/releases) and [GTKWave
 
 You also need Cologne Chip GateMate Tool Chain to synthetize for this FPGA. Refer to the corresponding paragraph below for more details.
 
+| Environment Variables | Directory Paths             |
+|-----------------------|-----------------------------|
+| PATH                  | GHDL and GTKWave bin directories |
+| GATEMATE_TOOLCHAIN_PATH | bin directory parent of yosis, p_r and openFPGALoader |
+
 ## Usage
 
 ### GHDL

@@ -3,7 +3,7 @@
   "displayName": "VHDL-Wave",
   "description": "VSCode extension for VHDL simulation with GHDL and GTKWave and synthesis for GateMate FPGA",
   "publisher": "Giles314",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/Giles314/vscode-vhdl-wave"
@@ -111,7 +111,7 @@
       },
       {
         "command": "extension.create_build_dir",
-        "title": "Create VHDL build directory"
+        "title": "VHDL-Wave: Create build directory"
       }
     ],
     "configuration": [
@@ -266,11 +266,11 @@
     "submenus": [
       {
         "id": "ghdl.editor_submenu",
-        "label": "GHDL"
+        "label": "VHDL-Wave"
       },
       {
         "id": "ghdl.explorer_submenu",
-        "label": "GHDL"
+        "label": "VHDL-Wave"
       }
     ],
     "menus": {
