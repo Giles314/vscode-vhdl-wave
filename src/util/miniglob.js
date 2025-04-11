@@ -332,6 +332,7 @@ class MiniGlob {
 		 */
 		function crawlDownDir(levelBase, dirPath, dirBrowser) {
 
+			let isOwningDirBrowser = false;
 			const nextPathItem = patternList[depth];
 			const level = (nextPathItem.patType == ANY_DIR) ? levelBase + 1 : 0;
 			if ((level == 0)   // Any non ANY_DIR pattern match only one dir level, therefore next level will use next pattern
@@ -380,6 +381,7 @@ class MiniGlob {
 						// The directory matches just process next pattern
 						// using the browser we have just got
 						crawlDownDir(/*levelBase*/0, nextPath, nextDirBrowser);
+						nextDirBrowser.close();
 					}
 				}
 				catch(err) {
@@ -397,6 +399,7 @@ class MiniGlob {
 					// Open our own directory browser
 					try {
 						dirBrowser = fs.opendirSync(dirPath);
+						isOwningDirBrowser = true;
 					}
 					catch(err) {
 						// This was not supposed to fail
@@ -446,6 +449,9 @@ class MiniGlob {
 							// Then try next directory that matches at this level
 						} 
 					}
+				}
+				if (isOwningDirBrowser) {
+					dirBrowser.close();
 				}
 			}
 		}

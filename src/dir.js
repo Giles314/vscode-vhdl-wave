@@ -38,6 +38,7 @@ function isValidDir (dirPath) {
     try {
         const dir = fs.opendirSync(dirPath);
         result = !! dir;
+        dir.close();
     }
     catch(err) {
         result = false;
