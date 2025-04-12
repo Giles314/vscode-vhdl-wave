@@ -63,6 +63,7 @@ Therefore the test bench files must not be located below the `src` directory.
 Place and Route (`p_r`) is a software developped by Cologne Chip that converts the net list obtained by Yosys synthesis of your VHDL hardware design
 to an actual GateMate FPGA implementation. To compute this, it needs the mapping of the design inputs and outputs to the FPGA pins (balls for this chip).
 This must be provided in a file called `<module-filename>.ccf` that must be placed in the same directory as the top module source file.
+
 > Again because `p_r` is case-sensitive, the pin name case must match the signal name case used in top entity declaration.
 
 Check the example files from the GateMate tool chain package for syntax of this `.ccf` file.
@@ -81,6 +82,27 @@ At this stage only 6 configuration are supported and only one (the default) has 
 | gatemate-evb-jtag-flash       | GateMate EVB       | Flash  | JTAG             | NOT Tested |
 | gatemate-evb-spi-fpga         | GateMate EVB       | FPGA   | SPI              | NOT Tested |
 | gatemate-evb-spi-flash        | GateMate EVB       | Flash  | SPI              | NOT Tested |
+
+### GateMate FPGA sources
+
+The source files that will be compiled to build a GateMate project are described by the setting `vhdl-wave > Library: Source Files`.
+This setting is a list of wildcard path expressions.
+All files maching one of those wildcard paths are part of the project.
+The wildcard characters are:
+
+| Wildcard | Additional constraint           | Matching                   |
+|----------|---------------------------------|--------------------|
+| **       | enclosed between '/' characters | Any number including 0 arbitrary sub-directories |
+| *        | not part of above rule          | Any number including 0 of characters in sub-directory, filename or extension |
+| ?        |              | Exactly one character. This may be any character except \/ or \\ |
+| <  \|  > | One or more \| characters between < and > separating alternatives; no \*, \?, \/ or \\ in alternatives | One of the alternatives |
+| <  >     | No \| or * between < and >      | Match only one single character among those that are between brackets |
+
+> \<ab> is the same as <a|b>
+
+> /\*\*/\*/ is the same as /\*/\*\*/ and will match one or more subdirectories
+
+> Under Windows \\ are allowed to replace \/
 
 ## Keybindings
 

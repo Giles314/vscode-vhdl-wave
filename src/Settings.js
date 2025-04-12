@@ -218,16 +218,20 @@ class Settings {
         this.cmdOption = [];
 
         if (this.isActive) {
-            let pattern = './src/**/*.vhd<l|>';  // VHDL sources in Gatemate project. TO DO: allow to modify it
-            if (! path.isAbsolute(pattern)) {
-                pattern = path.join(this.folderPath, pattern).replace(/\\/g, '/');
-                this.outputChannel.append(`Source file pattern=${pattern}\n`);
-            }
-
             /**
              * @type {string[]} includeCoreSourceFiles
              */
-            this.includeCoreSourceFiles = [ pattern ];
+            this.includeCoreSourceFiles =  this.workspaceConfig.get('library.SourceFiles'); // VHDL sources in GateMate FPGA project  
+            for (let i = 0; i < this.includeCoreSourceFiles.length; ++i) {
+                let pattern = this.includeCoreSourceFiles[i];
+                if (! path.isAbsolute(pattern)) {
+                    pattern = path.join(this.folderPath, pattern);
+                }
+                pattern = pattern.replace(/\\/g, '/');
+                this.includeCoreSourceFiles[i] = pattern;
+                this.outputChannel.append(`Source file pattern=${pattern}\n`);
+            }
+
 
             if (!this.isVhdlFolder && this.get_project_source()) {
                 this.outputChannel.append(`Source file matching pattern found: Folder is VHDL\n`);

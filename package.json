@@ -146,6 +146,15 @@
             "format": "uri",
             "description": "Specifies the directory paths where GHDL searchs for '.cf' library files (not used if left blank)"
           },
+          "vhdl-wave.library.SourceFiles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "scope": "resource",
+            "default": [ "./src/**/*.vhd<l|>" ],
+            "description": "Specifies the files that are part of the Cologne Chip GateMate project. Chech README for wild card syntax."
+          },
           "vhdl-wave.simulation.WaveDirPath": {
             "type": "string",
             "scope": "resource",
