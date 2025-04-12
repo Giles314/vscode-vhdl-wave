@@ -146,6 +146,15 @@
             "format": "uri",
             "description": "Specifies the directory paths where GHDL searchs for '.cf' library files (not used if left blank)"
           },
+          "vhdl-wave.library.SourceFiles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "scope": "resource",
+            "default": [ "./src/**/*.vhd<l|>" ],
+            "description": "Specifies the files that are part of the Cologne Chip GateMate project. Chech README for wild card syntax."
+          },
           "vhdl-wave.simulation.WaveDirPath": {
             "type": "string",
             "scope": "resource",
@@ -374,98 +383,6 @@
         }
       ]
     },
-    "keybindings": [
-      {
-        "command": "extension.editor_ghdl-analyze_file",
-        "key": "ctrl+alt+a",
-        "mac": "shift+cmd+a",
-        "linux": "shift+alt+a"
-      },
-      {
-        "command": "extension.editor_ghdl-elaborate_file",
-        "key": "ctrl+alt+l",
-        "mac": "shift+cmd+e",
-        "linux": "shift+alt+e"
-      },
-      {
-        "command": "extension.editor_ghdl-run_unit",
-        "key": "ctrl+alt+r",
-        "mac": "shift+cmd+r",
-        "linux": "shift+alt+r"
-      },
-      {
-        "command": "extension.editor_ghdl-make_unit",
-        "key": "ctrl+alt+m",
-        "mac": "shift+cmd+m",
-        "linux": "shift+alt+m"
-      },
-      {
-        "command": "extension.editor_ghdl-remove",
-        "key": "ctrl+alt+d",
-        "mac": "shift+cmd+d",
-        "linux": "shift+alt+d"
-      },
-      {
-        "command": "extension.editor_yosys-synth",
-        "key": "ctrl+alt+s",
-        "mac": "shift+cmd+s",
-        "linux": "shift+alt+s"
-      },
-      {
-        "command": "extension.explorer_ghdl-analyze_file",
-        "key": "ctrl+alt+a",
-        "mac": "shift+cmd+a",
-        "linux": "shift+alt+a"
-      },
-      {
-        "command": "extension.explorer_ghdl-elaborate_file",
-        "key": "ctrl+alt+l",
-        "mac": "shift+cmd+e",
-        "linux": "shift+alt+e"
-      },
-      {
-        "command": "extension.explorer_ghdl-run_unit",
-        "key": "ctrl+alt+r",
-        "mac": "shift+cmd+r",
-        "linux": "shift+alt+r"
-      },
-      {
-        "command": "extension.explorer_ghdl-make_unit",
-        "key": "ctrl+alt+m",
-        "mac": "shift+cmd+m",
-        "linux": "shift+alt+m"
-      },
-      {
-        "command": "extension.explorer_ghdl-remove",
-        "key": "ctrl+alt+d",
-        "mac": "shift+cmd+d",
-        "linux": "shift+alt+d"
-      },
-      {
-        "command": "extension.explorer_gtkwave",
-        "key": "ctrl+alt+g",
-        "mac": "shift+cmd+g",
-        "linux": "shift+alt+g"
-      },
-      {
-        "command": "extension.explorer_yosys-synth",
-        "key": "ctrl+alt+s",
-        "mac": "shift+cmd+s",
-        "linux": "shift+alt+s"
-      },
-      {
-        "command": "extension.explorer_place&route",
-        "key": "ctrl+alt+p",
-        "mac": "shift+cmd+p",
-        "linux": "shift+alt+p"
-      },
-      {
-        "command": "extension.explorer_load-FPGA",
-        "key": "ctrl+alt+f",
-        "mac": "shift+cmd+f",
-        "linux": "shift+alt+f"
-      }
-    ],
     "languages": [
       {
         "id": "vhdl",
