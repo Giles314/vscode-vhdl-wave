@@ -101,6 +101,8 @@ function createMenu(context) {
     const implementAsynCmd   = async (/** @type {any} */ selectedFile) => { implementProject(getSelectedFilePath(selectedFile)); }
     const loadFpgaAsynCmd    = async (/** @type {any} */ selectedFile) => { loadFpgaBitStream(getSelectedFilePath(selectedFile)); }
 
+    const buildAndLoadAsynCmd = async (/** @type {any} */ selectedFile) => { buildAndLoadGateMate(getSelectedFilePath(selectedFile)); }
+
     let disposableEditorAnalyze = vscode.commands.registerCommand('extension.editor_ghdl-analyze_file', analyzeAsyncCmd);
     let disposableExplorerAnalyze = vscode.commands.registerCommand('extension.explorer_ghdl-analyze_file', analyzeAsyncCmd);
 
@@ -152,6 +154,12 @@ function createMenu(context) {
 
     context.subscriptions.push(disposableEditorLoadFpga); 
     context.subscriptions.push(disposableExplorerLoadFpga);
+
+    let disposableEditorBuildAndLoad = vscode.commands.registerCommand('extension.editor_build-and-load', buildAndLoadAsynCmd);
+    let disposableExplorerBuildAndLoad = vscode.commands.registerCommand('extension.explorer_build-and-load', buildAndLoadAsynCmd);
+
+    context.subscriptions.push(disposableEditorBuildAndLoad); 
+    context.subscriptions.push(disposableExplorerBuildAndLoad);
 
     let disposableCreateBuildDir = vscode.commands.registerCommand('extension.create_build_dir', createBuildDirAsynCmd);
 
@@ -362,7 +370,7 @@ async function ghdlOptions(command, filePath) {
 
 
 /**
- * @param {string} filePath
+ * @param {string} filePath    the target file for the command
  * @returns {Promise<boolean>}
  */
 async function prepareCommand(filePath) {
@@ -376,12 +384,15 @@ async function prepareCommand(filePath) {
 
 
 /**
- * @param {string} filePath
- * @param {string} tool
+ * @param {string} filePath    file that will be applied the tool command
+ * @param {string} tool        name of the tool to prepare
+ * @param {boolean} noRefresh  request to skip configuration refresh (it should have been done recently)
  * @returns {Promise<string>}
  */
-async function prepareToolChain(filePath, tool) {
-    await settings.refresh(filePath, /*mustCreateBuildDir*/true);
+async function prepareToolChain(filePath, tool, noRefresh=false) {
+    if (!noRefresh) {
+        await settings.refresh(filePath);
+    }
     const ToolPath = getToolPath(tool);
     if (ToolPath !== undefined) {
         settings.makeSubDirs();
@@ -503,6 +514,7 @@ async function invokeGtkwave(filePath) {
  * @param {string} filePath path of the file that is the top module
  */
 async function synthesizeProject(filePath) {
+    let result = false;
     const yosysToolPath = await prepareToolChain(filePath, YOSYS);
     if (yosysToolPath !== undefined) {
         const command = await ghdlOptions(CommandTag.synth, filePath);
@@ -516,8 +528,9 @@ async function synthesizeProject(filePath) {
                             settings.getSynthNetlistFilename(command.unit) ];
         const quotedParam = quotedList.join(' ');
         let paramList = ['-l', settings.getLogFilePath('synth.log'), '-p', quotedParam];
-        await executeCommand(yosysToolPath, paramList, `Synthesize ${command.unit} completed`);
+        result = await executeCommand(yosysToolPath, paramList, `Synthesize ${command.unit} completed`);
     }
+    return result;
 }
 
 
@@ -525,15 +538,17 @@ async function synthesizeProject(filePath) {
  *  Implement the GateMate net list to produce FPGA configuration bit stream
  * @param {string} filePath path of the file that is the top module
  */
-async function implementProject(filePath) {
-    const p_rToolPath = await prepareToolChain(filePath, P_R);
+async function implementProject(filePath, continueLog = false) {
+    let result = false;
+    const p_rToolPath = await prepareToolChain(filePath, P_R, continueLog);
     if (p_rToolPath !== undefined) {
         const command = await ghdlOptions(CommandTag.implement, filePath);
         command.paramList.push( '-ccf');
         const ccfFilename = filePath.replace(/\.[^/.]+$/, ".ccf");
         command.paramList.push(ccfFilename);
-        await executeCommand(p_rToolPath, command.paramList, `Implementation of ${command.unit} completed`);
+        result = await executeCommand(p_rToolPath, command.paramList, `Implementation of ${command.unit} completed`, continueLog);
     }
+    return result;
 }
 
 
@@ -541,12 +556,23 @@ async function implementProject(filePath) {
  *  Load the configuration bit stream into the GateMate FPGA
  * @param {string} filePath path of the file that is the top module
  */
-async function loadFpgaBitStream(filePath) {
-    const fpgaLoaderToolPath = await prepareToolChain(filePath, FPGA_LOADER);
+async function loadFpgaBitStream(filePath, continueLog = false) {
+    const fpgaLoaderToolPath = await prepareToolChain(filePath, FPGA_LOADER, continueLog);
     if (fpgaLoaderToolPath !== undefined) {
         const fpgaConfigBitStream = settings.unitName + '_00.cfg'; //-- File that contains the FPGA configuration bit stream
         const loadInterfaceOptions = settings.getUploadInterfaceOptions().concat([fpgaConfigBitStream]);
-        await executeCommand(fpgaLoaderToolPath, loadInterfaceOptions, `Loading of ${settings.unitName} design configuration completed`);
+        await executeCommand(fpgaLoaderToolPath, loadInterfaceOptions, `Loading of ${settings.unitName} design configuration completed`, continueLog);
+    }
+}
+
+
+/**
+ * Make the GateMate build (synthetize, place and route) and and upload the binary stream 
+ * @param {string} filePath path of the file of the top unit that must be built
+ */
+async function buildAndLoadGateMate(filePath) {
+    if (await synthesizeProject(filePath) && await implementProject(filePath, /*continueLog*/true)) {
+        await loadFpgaBitStream(filePath, /*continueLog*/true);
     }
 }
 

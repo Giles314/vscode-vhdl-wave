@@ -63,15 +63,19 @@
       },
       {
         "command": "extension.editor_yosys-synth",
-        "title": "Synthesize"
+        "title": "GateMate Synthesize"
       },
       {
         "command": "extension.editor_place&route",
-        "title": "Place & Route"
+        "title": "GateMate Place & Route"
       },
       {
         "command": "extension.editor_load-FPGA",
-        "title": "Load FPGA"
+        "title": "Load GateMate FPGA"
+      },
+      {
+        "command": "extension.editor_build-and-load",
+        "title": "Build and Load GateMate"
       },
       {
         "command": "extension.explorer_ghdl-analyze_file",
@@ -99,15 +103,19 @@
       },
       {
         "command": "extension.explorer_yosys-synth",
-        "title": "Synthesize"
+        "title": "GateMate Synthesize"
       },
       {
         "command": "extension.explorer_place&route",
-        "title": "Place & Route"
+        "title": "GateMate Place & Route"
       },
       {
         "command": "extension.explorer_load-FPGA",
-        "title": "Load FPGA"
+        "title": "Load GateMate FPGA"
+      },
+      {
+        "command": "extension.explorer_build-and-load",
+        "title": "Build and Load GateMate"
       },
       {
         "command": "extension.create_build_dir",
@@ -299,35 +307,39 @@
         {
           "when": "resourceExtname != .vht",
           "command": "extension.editor_ghdl-analyze_file",
-          "group": "ghdl_editor@1"
+          "group": "A.ghdl_editor@1"
         },
         {
           "command": "extension.editor_ghdl-elaborate_file",
-          "group": "ghdl_editor@2"
+          "group": "A.ghdl_editor@2"
         },
         {
           "command": "extension.editor_ghdl-run_unit",
-          "group": "ghdl_editor@3"
+          "group": "A.ghdl_editor@3"
         },
         {
           "command": "extension.editor_ghdl-make_unit",
-          "group": "ghdl_editor@4"
+          "group": "A.ghdl_editor@4"
         },
         {
           "command": "extension.editor_ghdl-remove",
-          "group": "ghdl_editor@5"
+          "group": "A.ghdl_editor@5"
         },
         {
           "command": "extension.editor_yosys-synth",
-          "group": "ghdl_editor@6"
+          "group": "B.gatemate_editor@1"
         },
         {
           "command": "extension.editor_place&route",
-          "group": "ghdl_editor@7"
+          "group": "B.gatemate_editor@2"
         },
         {
           "command": "extension.editor_load-FPGA",
-          "group": "ghdl_editor@8"
+          "group": "B.gatemate_editor@3"
+        },
+        {
+          "command": "extension.editor_build-and-load",
+          "group": "B.gatemate_editor@4"
         }
       ],
       "explorer/context": [
@@ -351,35 +363,39 @@
         {
           "when": "resourceExtname != .vht",
           "command": "extension.explorer_ghdl-analyze_file",
-          "group": "ghdl_explorer@1"
+          "group": "A.ghdl_explorer@1"
         },
         {
           "command": "extension.explorer_ghdl-elaborate_file",
-          "group": "ghdl_explorer@2"
+          "group": "A.ghdl_explorer@2"
         },
         {
           "command": "extension.explorer_ghdl-run_unit",
-          "group": "ghdl_explorer@3"
+          "group": "A.ghdl_explorer@3"
         },
         {
           "command": "extension.explorer_ghdl-make_unit",
-          "group": "ghdl_explorer@4"
+          "group": "A.ghdl_explorer@4"
         },
         {
           "command": "extension.explorer_ghdl-remove",
-          "group": "ghdl_explorer@5"
+          "group": "A.ghdl_explorer@5"
         },
         {
           "command": "extension.explorer_yosys-synth",
-          "group": "ghdl_explorer@6"
+          "group": "B.gatemate_explorer@1"
         },
         {
           "command": "extension.explorer_place&route",
-          "group": "ghdl_explorer@7"
+          "group": "B.gatemate_explorer@2"
         },
         {
           "command": "extension.explorer_load-FPGA",
-          "group": "ghdl_explorer@8"
+          "group": "B.gatemate_explorer@3"
+        },
+        {
+          "command": "extension.explorer_build-and-load",
+          "group": "B.gatemate_explorer@4"
         }
       ]
     },

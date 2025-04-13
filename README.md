@@ -46,6 +46,15 @@ So you must download it on the [Cologne Chip web site](https://colognechip.com/p
 Then after unzipping the downloaded package in a directory, define an environment variable called `GATEMATE_TOOLCHAIN_PATH`
 so it refers to the `bin` sub-directory that contains the yosys, p_r and OpenFPGALoader tools.
 
+The GateMate commands are:
+
+| Command  | Function                       |
+|----------|--------------------------------|
+| Yosis Synthesis  | Compile all GateMate project sources to build the corresponding design circuit |
+| Place and Route  | Associate the generated circuit components to actual chip elements and finally produce the Gatemate binary configuration |
+| Load FPGA        | Load the RAM or the companion flash of the GateMate FPGA with the produced binary file |
+| Build and Load | Chain all 3 above commands |
+
 ### Yosys synthesis
 
 Yosys is able to synthesize a hardware design to produce an optimized net list referring to logic gates parts of Cologne Chip GateMate basic logic gates and IPs. Unfortunately Yosis is working with Verilog sources and output. But it can use GHDL as a plug-in to convert VHDL hardware design into a basic net list and process it as a starting point to perform the synthesis of the net list.
