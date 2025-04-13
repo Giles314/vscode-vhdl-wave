@@ -1,5 +1,7 @@
 <h1 align="center"> VHDL Wave </h1>
-This extension allows you to invoke GHDL functions, as well as GTKWave to perform simlation of VHDL files. Beyond, it lists the errors that were reported by GHDL in the GHDL Output channel. Using <ctrl> key you can click the description of the error location in the log to reach that location and fix your mistake.
+
+This extension allows you to invoke GHDL functions, as well as GTKWave to perform simlation of VHDL files. Beyond, it lists the errors that were reported by GHDL in the GHDL Output channel.
+Using `<ctrl>` key you can click the description of the error location in the log to reach that location and fix your mistake.
 
 ![VHDL-Wave usage](https://github.com/Giles314/vscode-vhdl-wave/blob/master/res/huge/ghdl_demo.gif?raw=true)
 
@@ -7,10 +9,10 @@ This extension allows you to invoke GHDL functions, as well as GTKWave to perfor
 
 You will need to have [GHDL](https://github.com/ghdl/ghdl/releases) and [GTKWave](http://gtkwave.sourceforge.net/) installed on your system. Furthermore both must be set in your environment variables.
 
-You also need Cologne Chip GateMate Tool Chain to synthetize for this FPGA. Refer to the corresponding paragraph below for more details.
+You also need [Cologne Chip GateMate Tool Chain](https://www.colognechip.com/programmable-logic/gatemate/gatemate-download/) to synthetize for this FPGA. Refer to the corresponding paragraph below for more details.
 
 | Environment Variables   | Directory Paths                  |
-|-----------------------|-----------------------------|
+|-------------------------|----------------------------------|
 | PATH                    | GHDL and GTKWave bin directories |
 | GATEMATE_TOOLCHAIN_PATH | bin directory parent of yosis, p_r and openFPGALoader |
 
@@ -72,12 +74,12 @@ Check the example files from the GateMate tool chain package for syntax of this 
 
 OpenFPGALoader is an open source software capable to upload a FPGA configuration through a FPGA or SPI interface and through several hardware and drivers managing this interface. In addition, the configuration may be loaded in the FPGA cache memory or in a flash memory. The effective configuration must be selected in the `Tool Chain: Load Interface` setting.
 
-At this stage only 6 configuration are supported and only one (the default) has been tested with corresponding hardware. Please give feedback if you have tested (successfuly or not) one of the untested options.
+At this stage only 6 configuration are supported but only dirtyjtag interface has been tested with corresponding hardware. Please give feedback if you have tested (successfuly or not) one of the untested options.
 
 | Option Name                   | Hardware Interface | Target | Target Interface | Status     |
 | ----------------------------- | ------------------ | ------ | ---------------- | ---------- |
 | dirtyjtag-jtag-fpga (default) | (pico-)dirtyjtag   | FPGA   | JTAG             | **Tested** |
-| dirtyjtag-jtag-flash          | (pico-)dirtyjtag   | Flash  | JTAG             | NOT Tested |
+| dirtyjtag-jtag-flash          | (pico-)dirtyjtag   | Flash  | JTAG             | **Tested** |
 | gatemate-evb-jtag-fpga        | GateMate EVB       | FPGA   | JTAG             | NOT Tested |
 | gatemate-evb-jtag-flash       | GateMate EVB       | Flash  | JTAG             | NOT Tested |
 | gatemate-evb-spi-fpga         | GateMate EVB       | FPGA   | SPI              | NOT Tested |
