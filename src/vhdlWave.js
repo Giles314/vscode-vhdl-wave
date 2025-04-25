@@ -78,30 +78,50 @@ function getToolPath(tool) {
 }
 
 
+async function saveIfAnyEditedVhdl () {
+    for (const textDoc of vscode.workspace.textDocuments) {
+        if (settings.vhdlExtPattern.test(textDoc.fileName)) {
+            try {
+                await vscode.window.activeTextEditor.document.save();
+                break;
+            }
+            catch (Err) {
+            }
+        }
+    }
+}
+
+
 /**
  * @param {vscode.ExtensionContext} context
  */
 function createMenu(context) {
     //-- Asynchronous functions to process commands
     const analyzeAsyncCmd = async (/** @type {any} */ selectedFile) => {
-        await vscode.window.activeTextEditor.document.save(); //save open file before analyzing it
+        await saveIfAnyEditedVhdl();
         analyzeFile(getSelectedFilePath(selectedFile)); 
     }
     const elabAsyncCmd   = async (/** @type {any} */ selectedFile) => { elaborateFiles(getSelectedFilePath(selectedFile)); }
     const runAsyncCmd    = async (/** @type {any} */ selectedFile) => { runUnit(getSelectedFilePath(selectedFile)); }
 
     const makeAsyncCmd = async (/** @type {any} */ selectedFile) => {
-        await vscode.window.activeTextEditor.document.save(); //save open file before analyzing it
+        await saveIfAnyEditedVhdl();
         makeUnit(getSelectedFilePath(selectedFile)); 
     }
     const removeAsynCmd  = async (/** @type {any} */ selectedFile) => { removeGeneratedFiles(getSelectedFilePath(selectedFile)); }
     const waveAsynCmd    = async (/** @type {{ fsPath: string; }} */ selectedFile) => { invokeGtkwave(selectedFile.fsPath); }
     
-    const synthesizeAsynCmd  = async (/** @type {any} */ selectedFile) => { synthesizeProject(getSelectedFilePath(selectedFile)); }
+    const synthesizeAsynCmd  = async (/** @type {any} */ selectedFile) => {
+        await saveIfAnyEditedVhdl();
+        synthesizeProject(getSelectedFilePath(selectedFile)); 
+    }
     const implementAsynCmd   = async (/** @type {any} */ selectedFile) => { implementProject(getSelectedFilePath(selectedFile)); }
     const loadFpgaAsynCmd    = async (/** @type {any} */ selectedFile) => { loadFpgaBitStream(getSelectedFilePath(selectedFile)); }
 
-    const buildAndLoadAsynCmd = async (/** @type {any} */ selectedFile) => { buildAndLoadGateMate(getSelectedFilePath(selectedFile)); }
+    const buildAndLoadAsynCmd = async (/** @type {any} */ selectedFile) => { 
+        await saveIfAnyEditedVhdl();
+        buildAndLoadGateMate(getSelectedFilePath(selectedFile)); 
+    }
 
     let disposableEditorAnalyze = vscode.commands.registerCommand('extension.editor_ghdl-analyze_file', analyzeAsyncCmd);
     let disposableExplorerAnalyze = vscode.commands.registerCommand('extension.explorer_ghdl-analyze_file', analyzeAsyncCmd);

@@ -54,8 +54,6 @@ const interface2Options = {
     "gatemate-evb-spi-flash" : [ '-b', 'gatemate_evb_spi', '-f' ],
 };
 
-const vhdlExtPattern = /\.vhdl?$/i;
-
 const defaultWorkLibNameInVhdlLs = "defaultLibrary";
     
 
@@ -94,6 +92,10 @@ class Settings {
          * @type {boolean} isVhdlFolder
          */
         this.isVhdlFolder = false;
+        /***
+         * @type {RegExp} vhdlExtPattern
+         */
+        this.vhdlExtPattern = /\.vhdl?$/i;
     }
 
 
@@ -175,7 +177,9 @@ class Settings {
             let vhdlFile = filePath
             if (! vhdlFile)
             {
-                vhdlFile =this.vscode.workspace.textDocuments.map(doc => doc.fileName).filter(filename => vhdlExtPattern.test(filename))
+                vhdlFile =this.vscode.workspace.textDocuments
+                                .map(doc => doc.fileName)
+                                .filter(filename => this.vhdlExtPattern.test(filename));
                 vhdlFile = vhdlFile[0];
             }
             if (vhdlFile) {
